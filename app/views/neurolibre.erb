@@ -136,9 +136,9 @@
           
           <div class="info-text">
             <h5>
-              Structured your GitHub repository according to <a href="https://docs.neurolibre.org/en/latest/STRUCTURE.html" target="_blank">NeuroLibre guidelines</a>?<br>
-              <a href="https://github.com/neurolibre/info/issues/new?assignees=agahkarakuzu&labels=DOWNLOAD&projects=&template=data_cache.md&title=" target="_blank">Opened an issue</a> for NeuroLibre to cache your data (if applicable)?<br>
-              Successfully built a <a href="https://binder-preview.neurolibre.org" target="_blank">Binder</a> for your repository (if executable)?<br>
+              Structured your GitHub repository according to <a href="https://docs.neurolibre.org/en/latest/STRUCTURE.html" target="_blank">NeuroLibre guidelines</a>? If not, visit our <a href="https://evidencepub.io/templates" target="_blank">template gallery</a> for pre-structured examples.<br>
+              <a href="https://github.com/neurolibre/info/issues/new?assignees=agahkarakuzu&labels=DOWNLOAD&projects=&template=data_cache.md&title=" target="_blank">Opened an issue</a> for us to cache your data (if applicable)?<br>
+              Successfully built a <a href="https://terrarium.evidencepub.io" target="_blank">terrarium</a> for your repository (if executable)?<br>
               Now you can try building your living preprint here!
             </h5>
           </div>
@@ -154,7 +154,7 @@
             <summary>Toggle for instructions</summary>
             <p>Select whether your preprint includes code that needs to be executed (like Python notebooks, R scripts, etc.).</p>
             <ul>
-              <li>Select <b>Yes</b> if your preprint contains code that needs to run. This requires a successful <a href="https://binder-preview.neurolibre.org" target="_blank">NeuroLibre Binder</a> build. You'll need to provide the specific commit SHA (from your repository) at which a Binder was successfully built.</li>
+              <li>Select <b>Yes</b> if your preprint contains code that needs to run. This requires a successful <a href="https://terrarium.evidencepub.io" target="_blank">terrarium</a> build.</li>
               <li>Select <b>No</b> if your preprint only contains static content (like Markdown, LaTeX files, or notebooks without code) that doesn't require any code execution.</li>
             </ul>
           </details>
@@ -169,7 +169,7 @@
             <ul>
               <li>Enter your email address where you'd like to receive build notifications</li>
               <li>Enter your GitHub repository URL (e.g., https://github.com/neurolibre/mystical-article) or shorthand format (e.g., neurolibre/mystical-article)</li>
-              <li>If you selected "Yes" for executable content, enter the full commit hash of your successful <a href="https://binder-preview.neurolibre.org" target="_blank">Binder</a> build</li>
+              <li>If you choose "Yes" for executable content, the runtime will be based on the full commit hash of your most recent successful (i.e., latest) <a href="https://terrarium.evidencepub.io" target="_blank">terrarium</a> build.</li>
               <li>Click "Build preprint" to start the build. You'll receive email notifications about the build progress and results.</li>
             </ul>
           </details>
@@ -186,8 +186,8 @@
                   <input placeholder="neurolibre/mystical-article" class="form-control" type="text" name="repository" id="repository" required />
                 </div>
                 <div class="col">
-                  <label for="branch" class="required">Binder commit reference</label>
-                  <input placeholder="Commit ref for successful Binder build" class="form-control" type="text" name="branch" id="branch" required />
+                  <label for="branch" class="required">Binder commit ref (optional)</label>
+                  <input placeholder="default: latest" class="form-control" type="text" name="branch" id="branch"/>
                 </div>
               </div>
             </div>
@@ -214,6 +214,13 @@
   </div>
 
   <script>
+    document.getElementById('preview-form').addEventListener('submit', function(event) {
+      const branchInput = document.getElementById('branch');
+      if (!branchInput.value) {
+        branchInput.value = 'latest';
+      }
+    });
+
     document.querySelectorAll('input[name="journal"]').forEach(radio => {
       radio.addEventListener('change', function() {
         const branchInput = document.getElementById('branch');
