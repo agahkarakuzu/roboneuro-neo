@@ -8,7 +8,7 @@ class SyncMystResponder < Responder
   def define_listening
     required_params :external_call
     @event_action = "issue_comment.created"
-    @event_regex = /\A@#{bot_name} sync myst\.?\s*$/i
+    @event_regex = /\A@#{bot_name} production sync myst\.?\s*$/i
   end
 
   def process_message(message)
@@ -55,7 +55,7 @@ class SyncMystResponder < Responder
   end
 
   def default_example_invocation
-    "@#{bot_name} sync myst"
+    "@#{bot_name} production sync myst"
   end
 end
 end
