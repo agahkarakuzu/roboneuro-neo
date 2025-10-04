@@ -148,6 +148,20 @@ buffy:
             binder_hash: match_data_2
           send_only_mapped: true
           silent: true
+      - neurolibre_fork_sync_upstream:
+          only: editors
+          command: "sync upstream"
+          description: "Syncs the upstream repository"
+          url: "https://preview.neurolibre.org/api/sync/fork"
+          headers:
+            username: <%= ENV['PREVIEW_API_USER'] %>
+            password: <%= ENV['PREVIEW_API_KEY'] %>
+          data_from_issue:
+            - target-repository
+          mapping:
+            id: issue_id
+            repository_url: target-repository
+          silent: true
       - neurolibre_build_latest_preview_myst:
           only: editors
           command: "build myst preview"
