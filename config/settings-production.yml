@@ -211,6 +211,29 @@ buffy:
             repository_url: target-repository
           send_only_mapped: true
           silent: true
+      - neurolibre_build_production_noexec_myst:
+          only: editors
+          command: "build myst production noexec"
+          description: "Builds myst article for preview from the latest commit"
+          url: "https://preview.neurolibre.org/api/myst/build"
+          headers:
+            username: <%= ENV['PREVIEW_API_USER'] %>
+            password: <%= ENV['PREVIEW_API_KEY'] %>
+          data_from_issue:
+            - target-repository
+            - issue_id
+            - preprint-version
+          query_params:
+            commit_hash: latest
+            binder_hash: noexec
+            is_prod: true
+            build_cache: true
+          mapping:
+            id: issue_id
+            repository_url: target-repository
+            prod_version: preprint-version
+          send_only_mapped: true
+          silent: true
     github_action:
       - draft_paper:
           command: generate pdf
