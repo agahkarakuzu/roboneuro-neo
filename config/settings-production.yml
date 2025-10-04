@@ -159,8 +159,10 @@ buffy:
             - branch
             - target-repository
             - issue_id
+            - preprint-version
           mapping:
             repository_url: target-repository
+            preprint_version: preprint-version
       - recommend_acceptance:
           if:
             value_matches:
