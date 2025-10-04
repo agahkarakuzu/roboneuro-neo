@@ -148,6 +148,44 @@ buffy:
             binder_hash: match_data_2
           send_only_mapped: true
           silent: true
+      - neurolibre_build_latest_preview_myst:
+          only: editors
+          command: "build myst"
+          description: "Builds myst article for preview from the latest commit"
+          url: "https://preview.neurolibre.org/api/myst/build"
+          headers:
+            username: <%= ENV['PREVIEW_API_USER'] %>
+            password: <%= ENV['PREVIEW_API_KEY'] %>
+          data_from_issue:
+            - target-repository
+            - issue_id
+          query_params:
+            commit_hash: latest
+            binder_hash: latest
+          mapping:
+            id: issue_id
+            repository_url: target-repository
+          send_only_mapped: true
+          silent: true
+      - neurolibre_build_latest_noexec_myst:
+          only: editors
+          command: "build myst noexec"
+          description: "Builds myst article for preview from the latest commit"
+          url: "https://preview.neurolibre.org/api/myst/build"
+          headers:
+            username: <%= ENV['PREVIEW_API_USER'] %>
+            password: <%= ENV['PREVIEW_API_KEY'] %>
+          data_from_issue:
+            - target-repository
+            - issue_id
+          query_params:
+            commit_hash: latest
+            binder_hash: noexec
+          mapping:
+            id: issue_id
+            repository_url: target-repository
+          send_only_mapped: true
+          silent: true
     github_action:
       - draft_paper:
           command: generate pdf
