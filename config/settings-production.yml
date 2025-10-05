@@ -159,6 +159,7 @@ buffy:
           data_from_issue:
             - target-repository
             - preprint-version
+            - issue_id
           mapping:
             id: issue_id
             repository_url: target-repository
