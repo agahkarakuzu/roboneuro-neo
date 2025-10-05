@@ -164,6 +164,7 @@ buffy:
             id: issue_id
             repository_url: target-repository
             preprint_version: preprint-version
+          send_only_mapped: true  
           silent: true
       - neurolibre_build_latest_preview_myst:
           only: editors
