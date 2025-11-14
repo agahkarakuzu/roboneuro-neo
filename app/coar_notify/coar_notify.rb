@@ -123,7 +123,7 @@ module CoarNotify
     def setup_database
       # Set up Sequel plugins globally
       Sequel::Model.plugin :timestamps
-      Sequel::Model.plugin :validation_helpers
+      # NOT using validation_helpers due to SQL generation bugs
     end
 
     def run_migrations
