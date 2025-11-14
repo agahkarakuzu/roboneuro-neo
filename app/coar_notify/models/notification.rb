@@ -147,6 +147,13 @@ module CoarNotify
           obj_types = extract_types(notification.object&.type)
           ctx_types = extract_types(notification.context&.type)
 
+          # Use provided JSON payload if available, otherwise parse notification
+          payload = if extra_attrs[:json_payload]
+                      JSON.parse(extra_attrs.delete(:json_payload))
+                    else
+                      parse_payload(notification)
+                    end
+
           create(
             notification_id: notification.id,
             direction: direction,
@@ -163,7 +170,7 @@ module CoarNotify
             actor_id: notification.actor&.id,
             actor_name: notification.actor&.name,
             summary: (notification.respond_to?(:summary) ? notification.summary : nil),
-            payload: parse_payload(notification),
+            payload: payload,
             paper_doi: extract_paper_doi(notification),
             service_name: extract_service_name(notification, direction),
             status: extra_attrs[:status] || 'pending',

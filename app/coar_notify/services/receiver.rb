@@ -72,10 +72,11 @@ module CoarNotify
           }
         end
 
-        # 4. Persist to database
+        # 4. Persist to database (pass original JSON for payload)
         record = Models::Notification.create_from_coar(
           notification,
-          'received'
+          'received',
+          json_payload: json_body
         )
 
         # 5. Enqueue worker for async processing
