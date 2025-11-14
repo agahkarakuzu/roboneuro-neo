@@ -78,31 +78,31 @@ module CoarNotify
         end
       end
 
-      # Validations - TEMPORARILY DISABLED to debug SQL generation bug
-      # def validate
-      #   super
-      #   # Manual presence validations
-      #   errors.add(:notification_id, 'cannot be blank') if !notification_id || notification_id.to_s.strip.empty?
-      #   errors.add(:direction, 'cannot be blank') if !direction || direction.to_s.strip.empty?
-      #   errors.add(:notification_types, 'cannot be blank') if !notification_types || notification_types.empty?
-      #   errors.add(:origin_id, 'cannot be blank') if !origin_id || origin_id.to_s.strip.empty?
-      #   errors.add(:target_id, 'cannot be blank') if !target_id || target_id.to_s.strip.empty?
-      #   errors.add(:object_id, 'cannot be blank') if !object_id || object_id.to_s.strip.empty?
-      #   errors.add(:payload, 'cannot be blank') if !payload || payload.empty?
-      #   errors.add(:status, 'cannot be blank') if !status || status.to_s.strip.empty?
-      #   # Validate direction is one of allowed values
-      #   if direction && !['sent', 'received'].include?(direction)
-      #     errors.add(:direction, 'must be sent or received')
-      #   end
-      #   # Validate status is one of allowed values
-      #   if status && !['pending', 'processing', 'processed', 'failed'].include?(status)
-      #     errors.add(:status, 'must be pending, processing, processed, or failed')
-      #   end
-      #   # Check uniqueness manually
-      #   if new? && notification_id && self.class.where(notification_id: notification_id).count > 0
-      #     errors.add(:notification_id, 'is already taken')
-      #   end
-      # end
+      # Validations - all manual to avoid Sequel validation helper bugs
+      def validate
+        super
+        # Manual presence validations
+        errors.add(:notification_id, 'cannot be blank') if !notification_id || notification_id.to_s.strip.empty?
+        errors.add(:direction, 'cannot be blank') if !direction || direction.to_s.strip.empty?
+        errors.add(:notification_types, 'cannot be blank') if !notification_types || notification_types.empty?
+        errors.add(:origin_id, 'cannot be blank') if !origin_id || origin_id.to_s.strip.empty?
+        errors.add(:target_id, 'cannot be blank') if !target_id || target_id.to_s.strip.empty?
+        errors.add(:object_id, 'cannot be blank') if !object_id || object_id.to_s.strip.empty?
+        errors.add(:payload, 'cannot be blank') if !payload || payload.to_s.strip.empty?
+        errors.add(:status, 'cannot be blank') if !status || status.to_s.strip.empty?
+        # Validate direction is one of allowed values
+        if direction && !['sent', 'received'].include?(direction)
+          errors.add(:direction, 'must be sent or received')
+        end
+        # Validate status is one of allowed values
+        if status && !['pending', 'processing', 'processed', 'failed'].include?(status)
+          errors.add(:status, 'must be pending, processing, processed, or failed')
+        end
+        # Check uniqueness manually
+        if new? && notification_id && self.class.where(notification_id: notification_id).count > 0
+          errors.add(:notification_id, 'is already taken')
+        end
+      end
 
       # Parse stored payload back to coarnotifyrb object
       # @return [Coarnotify::Patterns::*] coarnotifyrb notification object
@@ -163,10 +163,11 @@ module CoarNotify
           ctx_types = extract_types(notification.context&.type)
 
           # Use provided JSON payload if available, otherwise parse notification
+          # Wrap in Sequel.pg_jsonb() to properly serialize as JSONB column
           payload = if extra_attrs[:json_payload]
-                      JSON.parse(extra_attrs.delete(:json_payload))
+                      Sequel.pg_jsonb(JSON.parse(extra_attrs.delete(:json_payload)))
                     else
-                      parse_payload(notification)
+                      Sequel.pg_jsonb(parse_payload(notification))
                     end
 
           create(
