@@ -163,9 +163,9 @@ module CoarNotify
             target_id: notification.target.id,
             target_inbox: notification.target&.inbox,
             object_id: notification.object.id,
-            object_type: obj_types ? Sequel.pg_array(obj_types) : nil,
+            object_type: obj_types ? obj_types.join(', ') : nil,  # TEXT column, not array
             context_id: notification.context&.id,
-            context_type: ctx_types ? Sequel.pg_array(ctx_types) : nil,
+            context_type: ctx_types ? ctx_types.join(', ') : nil,  # TEXT column, not array
             in_reply_to: (notification.respond_to?(:in_reply_to) ? notification.in_reply_to : nil),
             actor_id: notification.actor&.id,
             actor_name: notification.actor&.name,
