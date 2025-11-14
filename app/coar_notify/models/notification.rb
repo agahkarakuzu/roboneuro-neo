@@ -145,15 +145,15 @@ module CoarNotify
           create(
             notification_id: notification.id,
             direction: direction,
-            notification_types: Array(notification.type),
+            notification_types: extract_types(notification.type),
             origin_id: notification.origin.id,
             origin_inbox: notification.origin&.inbox,
             target_id: notification.target.id,
             target_inbox: notification.target&.inbox,
             object_id: notification.object.id,
-            object_type: notification.object&.type,
+            object_type: extract_types(notification.object&.type),
             context_id: notification.context&.id,
-            context_type: notification.context&.type,
+            context_type: extract_types(notification.context&.type),
             in_reply_to: (notification.respond_to?(:in_reply_to) ? notification.in_reply_to : nil),
             actor_id: notification.actor&.id,
             actor_name: notification.actor&.name,
@@ -198,6 +198,33 @@ module CoarNotify
         end
 
         private
+
+        # Extract types from coarnotify type object to array of strings
+        # @param type_obj [Object] type object from coarnotify
+        # @return [Array<String>, nil] array of type strings or nil
+        def extract_types(type_obj)
+          return nil if type_obj.nil?
+
+          # If it's already an array of strings, return it
+          return type_obj if type_obj.is_a?(Array) && type_obj.all? { |t| t.is_a?(String) }
+
+          # If it's a single string, wrap in array
+          return [type_obj] if type_obj.is_a?(String)
+
+          # If it responds to to_a, convert to array
+          if type_obj.respond_to?(:to_a)
+            types = type_obj.to_a
+            return types.map(&:to_s) if types.is_a?(Array)
+          end
+
+          # Try to get the value if it's a wrapper object
+          if type_obj.respond_to?(:value)
+            return extract_types(type_obj.value)
+          end
+
+          # Fallback: convert to string and wrap in array
+          [type_obj.to_s]
+        end
 
         # Parse notification to JSON hash
         # @param notification [Coarnotify::Patterns::*] coarnotifyrb notification
