@@ -44,8 +44,19 @@ module CoarNotify
         validate_ip!(request_ip) if CoarNotify.ip_whitelist_enabled?
 
         # 2. Parse and validate with coarnotifyrb
-        receipt = @server.receive(json_body, validate: true)
+        # First parse to get the notification object
         notification = Coarnotify.from_json(json_body)
+
+        # Validate manually to get detailed errors
+        begin
+          notification.validate
+        rescue Coarnotify::ValidationError => e
+          # Re-raise with detailed validation errors
+          raise e
+        end
+
+        # Process through server for receipt
+        receipt = @server.receive(json_body, validate: true)
 
         # 3. Check for duplicate (idempotency)
         existing = Models::Notification.where(

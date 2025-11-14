@@ -75,6 +75,14 @@ module CoarNotify
             details: e.message
           )
 
+        rescue Coarnotify::Server::COARNotifyServerError => e
+          status e.status_code
+          json_response(
+            error: 'COAR Notify server error',
+            details: e.message,
+            status_code: e.status_code
+          )
+
         rescue Coarnotify::ValidationError => e
           status 400
           json_response(
