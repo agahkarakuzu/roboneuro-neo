@@ -110,7 +110,14 @@ module CoarNotify
         database_url = 'sqlite::memory:'
       end
 
-      Sequel.connect(database_url)
+      db = Sequel.connect(database_url)
+
+      # Enable PostgreSQL array support if using PostgreSQL
+      if db.database_type == :postgres
+        db.extension :pg_array
+      end
+
+      db
     end
 
     def setup_database

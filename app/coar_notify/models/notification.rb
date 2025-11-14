@@ -3,9 +3,6 @@
 require 'sequel'
 require 'coarnotify'
 
-# Enable PostgreSQL array support
-Sequel.extension :pg_array
-
 module CoarNotify
   module Models
     # Notification model for persisting COAR Notify notifications
@@ -28,7 +25,6 @@ module CoarNotify
 
       plugin :timestamps, update_on_create: true
       plugin :validation_helpers
-      plugin :pg_array
 
       # Scopes for common queries
       dataset_module do
