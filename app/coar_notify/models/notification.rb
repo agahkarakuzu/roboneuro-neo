@@ -84,9 +84,13 @@ module CoarNotify
         super
         validates_presence [:notification_id, :direction, :notification_types,
                             :origin_id, :target_id, :object_id, :payload, :status]
-        validates_includes :direction, ['sent', 'received']
-        validates_includes :status, ['pending', 'processing', 'processed', 'failed']
         validates_unique :notification_id
+
+        # Validate direction is one of allowed values
+        errors.add(:direction, 'must be sent or received') unless ['sent', 'received'].include?(direction)
+
+        # Validate status is one of allowed values
+        errors.add(:status, 'must be pending, processing, processed, or failed') unless ['pending', 'processing', 'processed', 'failed'].include?(status)
       end
 
       # Parse stored payload back to coarnotifyrb object
