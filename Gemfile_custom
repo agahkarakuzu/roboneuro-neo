@@ -5,6 +5,6 @@
 gem 'ojra'
 
 # COAR Notify dependencies
-gem 'coarnotify', path: 'coarnotifyrb'  # COAR Notify protocol (local submodule)
+gem 'coarnotify', git: 'https://github.com/agahkarakuzu/coarnotifyrb.git'  # COAR Notify protocol (fork with ValidationError fix)
 gem 'sequel', '~> 5.0'                   # Database ORM (lightweight for Sinatra)
 gem 'pg', '~> 1.5'                       # PostgreSQL adapter
