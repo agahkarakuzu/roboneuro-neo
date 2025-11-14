@@ -67,22 +67,28 @@ This module implements **Option 2** from the COAR Notify architecture specificat
 The module requires:
 - PostgreSQL (for notification storage)
 - Redis (for Sidekiq job queue - already present in roboneuro)
-- `coarnotify` gem (COAR Notify protocol implementation)
+- `coarnotify` gem (COAR Notify protocol implementation - **via git submodule**)
 - `sequel` gem (database ORM)
 
 Dependencies are already added to `Gemfile_custom`:
 
 ```ruby
-gem 'coarnotify', '~> 0.1.0'
+gem 'coarnotify', path: 'coarnotifyrb'  # Local submodule (not published to RubyGems)
 gem 'sequel', '~> 5.0'
 gem 'pg', '~> 1.5'
 ```
 
-Install gems:
+Initialize submodules and install gems:
 
 ```bash
+# Initialize git submodules (coarnotifyrb)
+git submodule update --init --recursive
+
+# Install gems
 bundle install
 ```
+
+**Note**: The `coarnotify` gem is not published to RubyGems, so it's included as a git submodule at `coarnotifyrb/` and referenced locally in the Gemfile.
 
 ### 2. Database Setup
 

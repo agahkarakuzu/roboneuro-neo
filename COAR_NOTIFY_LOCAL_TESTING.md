@@ -42,12 +42,17 @@ redis-cli ping    # Should return PONG
 ```bash
 cd /path/to/roboneuro-neo
 
+# Initialize git submodules (includes coarnotifyrb)
+git submodule update --init --recursive
+
 # Install gems
 bundle install
 
 # If you encounter issues, try:
 bundle update
 ```
+
+**Note**: The `coarnotify` gem is not published to RubyGems, so it's included as a git submodule at `coarnotifyrb/`. The `git submodule update` command is required to fetch it.
 
 ### 2. Create Local Database
 

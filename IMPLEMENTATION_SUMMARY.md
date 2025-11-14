@@ -199,15 +199,21 @@ heroku run sequel -m db/migrations \$DATABASE_URL
 
 ### Dependencies
 
-**Install gems:**
+**Initialize submodules and install gems:**
 ```bash
+# Initialize git submodules (coarnotifyrb is not published to RubyGems)
+git submodule update --init --recursive
+
+# Install gems
 bundle install
 ```
 
 **Added to Gemfile_custom:**
-- `coarnotify` (~> 0.1.0) - COAR Notify protocol
+- `coarnotify` (path: 'coarnotifyrb') - COAR Notify protocol (local submodule)
 - `sequel` (~> 5.0) - Database ORM
 - `pg` (~> 1.5) - PostgreSQL adapter
+
+**Note**: The `coarnotify` gem is not published to RubyGems, so it's used as a git submodule.
 
 ---
 
