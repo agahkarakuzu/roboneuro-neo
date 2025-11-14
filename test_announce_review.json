@@ -18,10 +18,12 @@
     "type": [
       "Document",
       "sorg:Review"
-    ]
+    ],
+    "ietf:cite-as": "https://doi.org/10.5555/12345678"
   },
-  "target": {
+  "context": {
     "id": "https://doi.org/10.55458/neurolibre.00001",
+    "ietf:cite-as": "https://doi.org/10.55458/neurolibre.00001",
     "type": "sorg:ScholarlyArticle"
   },
   "actor": {
