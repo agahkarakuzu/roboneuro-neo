@@ -84,8 +84,8 @@ module CoarNotify
         super
         validates_presence [:notification_id, :direction, :notification_types,
                             :origin_id, :target_id, :object_id, :payload, :status]
-        validates_includes ['sent', 'received'], :direction
-        validates_includes ['pending', 'processing', 'processed', 'failed'], :status
+        validates_includes :direction, ['sent', 'received']
+        validates_includes :status, ['pending', 'processing', 'processed', 'failed']
         validates_unique :notification_id
       end
 
