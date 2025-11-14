@@ -19,9 +19,9 @@
     <div class="mb-8">
       <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
         <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
         </svg>
-        COAR Notify Inbox
+        COAR Notify Dashboard
       </h1>
       <p class="mt-2 text-gray-600">W3C Linked Data Notifications for scholarly communications</p>
     </div>
@@ -86,7 +86,7 @@
         </div>
         <% if @current_status || @current_service %>
           <div>
-            <a href="/coar/inbox/view?direction=<%= @current_direction %>" class="text-sm text-gray-600 hover:text-gray-900 px-4 py-2 rounded-md border border-gray-300 inline-block">
+            <a href="/coar/dashboard?direction=<%= @current_direction %>" class="text-sm text-gray-600 hover:text-gray-900 px-4 py-2 rounded-md border border-gray-300 inline-block">
               Clear Filters
             </a>
           </div>
@@ -108,7 +108,7 @@
         <ul class="divide-y divide-gray-200">
           <% @notifications.each do |notification| %>
             <li class="hover:bg-gray-50 transition-colors">
-              <a href="/coar/inbox/view/<%= notification.id %>" class="block px-6 py-4">
+              <a href="/coar/dashboard/<%= notification.id %>" class="block px-6 py-4">
                 <div class="flex items-center justify-between">
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-3 mb-2">

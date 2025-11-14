@@ -204,7 +204,7 @@ All sent notifications are saved to the database with `direction = 'sent'`.
 
 View them in the UI:
 ```
-http://localhost:3000/coar/inbox/view?direction=sent
+http://localhost:3000/coar/dashboard?direction=sent
 ```
 
 Or query the database:
@@ -226,6 +226,6 @@ psql $DATABASE_URL -c "SELECT id, notification_id, error_message FROM coar_notif
 
 ## Next Steps
 
-- Check sent notifications in the UI: `/coar/inbox/view?direction=sent`
-- Monitor for responses in the inbox: `/coar/inbox/view?direction=received`
+- Check sent notifications in the UI: `/coar/dashboard?direction=sent`
+- Monitor for responses in the inbox: `/coar/dashboard?direction=received`
 - Set up Sidekiq workers to automatically process received notifications

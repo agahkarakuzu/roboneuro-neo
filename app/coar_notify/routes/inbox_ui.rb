@@ -5,14 +5,14 @@ require 'json'
 
 module CoarNotify
   module Routes
-    # Web UI for viewing COAR Notify inbox
-    class InboxUI < Sinatra::Base
+    # Web UI for viewing COAR Notify notifications (inbox and outbox)
+    class Dashboard < Sinatra::Base
       # Configure Sinatra
       set :views, File.join(__dir__, '../views')
       set :public_folder, File.join(__dir__, '../../../public')
 
-      # Main inbox view
-      get '/coar/inbox/view' do
+      # Main dashboard view
+      get '/coar/dashboard' do
         # Get filter parameters
         status_filter = params[:status]
         service_filter = params[:service]
@@ -52,7 +52,7 @@ module CoarNotify
       end
 
       # View individual notification details
-      get '/coar/inbox/view/:id' do
+      get '/coar/dashboard/:id' do
         @notification = CoarNotify::Models::Notification.where(id: params[:id]).first
         halt 404, 'Notification not found' unless @notification
 
@@ -60,7 +60,7 @@ module CoarNotify
       end
 
       # API endpoint to get notification payload as JSON
-      get '/coar/inbox/api/:id/payload' do
+      get '/coar/dashboard/api/:id/payload' do
         content_type :json
         notification = CoarNotify::Models::Notification.where(id: params[:id]).first
         halt 404, { error: 'Notification not found' }.to_json unless notification
