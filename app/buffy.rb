@@ -4,6 +4,7 @@ require_relative 'sinatra_ext/github_webhook_filter'
 require_relative 'lib/responders_loader'
 require_relative 'coar_notify/coar_notify'
 require_relative 'coar_notify/routes/inbox'
+require_relative 'coar_notify/routes/inbox_ui'
 
 class Buffy < Sinatra::Base
   include RespondersLoader
@@ -21,6 +22,7 @@ class Buffy < Sinatra::Base
 
   # Mount COAR Notify routes
   use CoarNotify::Routes::Inbox
+  use CoarNotify::Routes::InboxUI
 
   post '/dispatch' do
     responders.respond(@message, @context)
