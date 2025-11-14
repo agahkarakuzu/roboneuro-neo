@@ -84,13 +84,17 @@ module CoarNotify
         super
         validates_presence [:notification_id, :direction, :notification_types,
                             :origin_id, :target_id, :object_id, :payload, :status]
-        validates_unique :notification_id
 
         # Validate direction is one of allowed values
         errors.add(:direction, 'must be sent or received') unless ['sent', 'received'].include?(direction)
 
         # Validate status is one of allowed values
         errors.add(:status, 'must be pending, processing, processed, or failed') unless ['pending', 'processing', 'processed', 'failed'].include?(status)
+
+        # Check uniqueness manually to avoid validates_unique SQL issues
+        if new? && self.class.where(notification_id: notification_id).count > 0
+          errors.add(:notification_id, 'is already taken')
+        end
       end
 
       # Parse stored payload back to coarnotifyrb object
