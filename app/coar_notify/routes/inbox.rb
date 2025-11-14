@@ -90,9 +90,18 @@ module CoarNotify
           )
 
         rescue => e
-          # Log unexpected errors
-          logger.error("COAR Notify inbox error: #{e.class} - #{e.message}")
-          logger.error(e.backtrace.join("\n")) if e.backtrace
+          # Log unexpected errors to both logger and stderr
+          error_msg = "COAR Notify inbox error: #{e.class} - #{e.message}"
+          backtrace = e.backtrace ? e.backtrace.join("\n") : "No backtrace available"
+
+          logger.error(error_msg)
+          logger.error(backtrace)
+
+          # Also print to stderr for immediate visibility
+          $stderr.puts "\n" + "=" * 80
+          $stderr.puts error_msg
+          $stderr.puts backtrace
+          $stderr.puts "=" * 80 + "\n"
 
           # Notify error tracking service if available
           Honeybadger.notify(e) if defined?(Honeybadger)
