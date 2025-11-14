@@ -43,6 +43,7 @@ module CoarNotify
   module Routes
     autoload :Inbox, File.expand_path('routes/inbox', __dir__)
     autoload :InboxUI, File.expand_path('routes/inbox_ui', __dir__)
+    autoload :Outbox, File.expand_path('routes/outbox', __dir__)
   end
 
   class << self

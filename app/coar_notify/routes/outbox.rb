@@ -1,0 +1,207 @@
+# frozen_string_literal: true
+
+require 'sinatra/base'
+require 'json'
+
+module CoarNotify
+  module Routes
+    # COAR Notify Outbox - Send notifications to remote services
+    class Outbox < Sinatra::Base
+      # Send a COAR Notify notification
+      # POST /coar/outbox
+      # Body: JSON-LD COAR Notify notification
+      post '/coar/outbox' do
+        content_type :json
+
+        # Parse JSON body
+        request.body.rewind
+        json_body = request.body.read
+
+        begin
+          # Validate and parse the notification
+          notification = Coarnotify.from_json(json_body)
+
+          # Send via the Sender service
+          sender = CoarNotify::Services::Sender.new
+          result = sender.send_notification(notification)
+
+          if result[:success]
+            # Return success response
+            status 202  # Accepted (async processing)
+            {
+              status: 'accepted',
+              message: 'Notification queued for sending',
+              notification_id: notification.id,
+              record_id: result[:record]&.id
+            }.to_json
+          else
+            status 500
+            {
+              status: 'error',
+              message: result[:error] || 'Failed to send notification'
+            }.to_json
+          end
+
+        rescue Coarnotify::ValidationError => e
+          status 400
+          {
+            status: 'error',
+            message: 'Invalid notification',
+            details: e.message
+          }.to_json
+        rescue JSON::ParserError => e
+          status 400
+          {
+            status: 'error',
+            message: 'Invalid JSON',
+            details: e.message
+          }.to_json
+        rescue => e
+          logger.error("Outbox error: #{e.class} - #{e.message}")
+          logger.error(e.backtrace.join("\n")) if e.backtrace
+
+          status 500
+          {
+            status: 'error',
+            message: 'Internal server error',
+            details: e.message
+          }.to_json
+        end
+      end
+
+      # Helper endpoint to send common notification types
+      # POST /coar/outbox/endorsement
+      # Simplified payload for endorsing a preprint
+      post '/coar/outbox/endorsement' do
+        content_type :json
+
+        begin
+          params_hash = JSON.parse(request.body.read)
+
+          # Build COAR Notify Endorsement (Offer + EndorsementAction)
+          notification_json = {
+            '@context': [
+              'https://www.w3.org/ns/activitystreams',
+              'https://purl.org/coar/notify'
+            ],
+            'id': params_hash['id'] || "urn:uuid:#{SecureRandom.uuid}",
+            'type': ['Offer', 'coar-notify:EndorsementAction'],
+            'origin': {
+              'id': params_hash['origin_id'] || CoarNotify.service_id,
+              'inbox': params_hash['origin_inbox'] || CoarNotify.inbox_url,
+              'type': 'Service'
+            },
+            'target': {
+              'id': params_hash['target_id'],
+              'inbox': params_hash['target_inbox'],
+              'type': 'Service'
+            },
+            'object': {
+              'id': params_hash['object_id'],
+              'ietf:cite-as': params_hash['object_doi'],
+              'type': params_hash['object_type'] || ['Page', 'sorg:AboutPage']
+            },
+            'actor': {
+              'id': params_hash['actor_id'],
+              'name': params_hash['actor_name'],
+              'type': params_hash['actor_type'] || 'Person'
+            }
+          }
+
+          # Add optional fields
+          notification_json[:object]['ietf:item'] = params_hash['object_item'] if params_hash['object_item']
+          notification_json[:context] = params_hash['context'] if params_hash['context']
+
+          # Parse and send
+          notification = Coarnotify.from_hash(notification_json)
+          sender = CoarNotify::Services::Sender.new
+          result = sender.send_notification(notification)
+
+          if result[:success]
+            status 202
+            {
+              status: 'accepted',
+              message: 'Endorsement notification queued for sending',
+              notification_id: notification.id,
+              record_id: result[:record]&.id
+            }.to_json
+          else
+            status 500
+            { status: 'error', message: result[:error] }.to_json
+          end
+
+        rescue => e
+          logger.error("Endorsement error: #{e.class} - #{e.message}")
+          status 500
+          { status: 'error', message: e.message }.to_json
+        end
+      end
+
+      # Helper endpoint to send review announcements
+      # POST /coar/outbox/announce-review
+      post '/coar/outbox/announce-review' do
+        content_type :json
+
+        begin
+          params_hash = JSON.parse(request.body.read)
+
+          # Build COAR Notify Review Announcement
+          notification_json = {
+            '@context': [
+              'https://www.w3.org/ns/activitystreams',
+              'https://purl.org/coar/notify'
+            ],
+            'id': params_hash['id'] || "urn:uuid:#{SecureRandom.uuid}",
+            'type': ['Announce', 'coar-notify:ReviewAction'],
+            'origin': {
+              'id': params_hash['origin_id'] || CoarNotify.service_id,
+              'inbox': params_hash['origin_inbox'] || CoarNotify.inbox_url,
+              'type': 'Service'
+            },
+            'target': {
+              'id': params_hash['target_id'],
+              'inbox': params_hash['target_inbox'],
+              'type': 'Service'
+            },
+            'object': {
+              'id': params_hash['review_url'],
+              'ietf:cite-as': params_hash['review_doi'],
+              'type': params_hash['object_type'] || ['Page', 'sorg:Review']
+            },
+            'context': {
+              'id': params_hash['preprint_doi'] || params_hash['preprint_url'],
+              'type': params_hash['context_type'] || ['ScholarlyArticle']
+            },
+            'actor': {
+              'id': params_hash['actor_id'] || CoarNotify.service_id,
+              'name': params_hash['actor_name'] || 'NeuroLibre',
+              'type': 'Service'
+            }
+          }
+
+          notification = Coarnotify.from_hash(notification_json)
+          sender = CoarNotify::Services::Sender.new
+          result = sender.send_notification(notification)
+
+          if result[:success]
+            status 202
+            {
+              status: 'accepted',
+              message: 'Review announcement queued for sending',
+              notification_id: notification.id,
+              record_id: result[:record]&.id
+            }.to_json
+          else
+            status 500
+            { status: 'error', message: result[:error] }.to_json
+          end
+
+        rescue => e
+          logger.error("Review announcement error: #{e.class} - #{e.message}")
+          status 500
+          { status: 'error', message: e.message }.to_json
+        end
+      end
+    end
+  end
+end

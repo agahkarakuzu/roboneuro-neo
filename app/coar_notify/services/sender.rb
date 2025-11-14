@@ -16,11 +16,76 @@ module CoarNotify
     # Supported patterns:
     # - RequestReview: Request review of a preprint
     # - RequestEndorsement: Request endorsement of a preprint
+    # - Generic: Send any COAR Notify notification
     #
     # Example usage:
     #   sender = Sender.new
     #   result = sender.send_request_review(paper_data, 'prereview')
+    #   result = sender.send_notification(notification)
     class Sender
+      # Send a generic COAR Notify notification
+      #
+      # @param notification [Coarnotify::Patterns::*] notification object from coarnotifyrb
+      # @param extra_attrs [Hash] optional attributes (issue_id, etc.)
+      # @return [Hash] result with success status and notification details
+      def send_notification(notification, extra_attrs = {})
+        # Validate notification
+        notification.validate
+
+        # Get target inbox URL
+        inbox_url = notification.target&.inbox
+        raise ArgumentError, 'Notification target inbox is required' unless inbox_url
+
+        # Create COAR Notify client
+        client = Coarnotify.client(inbox_url: inbox_url)
+
+        # Send notification
+        begin
+          response = client.send(notification, validate: true)
+
+          # Persist to database
+          record = Models::Notification.create_from_coar(
+            notification,
+            'sent',
+            extra_attrs.merge(status: 'processed') # Sent notifications are immediately 'processed'
+          )
+
+          {
+            success: true,
+            notification_id: notification.id,
+            response_action: response.action,
+            response_location: response.location,
+            record: record,
+            record_id: record.id
+          }
+        rescue => e
+          # Log error and return failure
+          error_msg = "Failed to send notification: #{e.class} - #{e.message}"
+
+          # Try to persist failed notification
+          begin
+            record = Models::Notification.create_from_coar(
+              notification,
+              'sent',
+              extra_attrs.merge(
+                status: 'failed',
+                error_message: error_msg
+              )
+            )
+          rescue => db_error
+            # If we can't even save to DB, just log it
+            warn "Failed to persist failed notification: #{db_error.message}"
+          end
+
+          {
+            success: false,
+            error: error_msg,
+            notification_id: notification.id,
+            record: record
+          }
+        end
+      end
+
       # Send a RequestReview notification
       #
       # @param paper_data [Hash] paper metadata
