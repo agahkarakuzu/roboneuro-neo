@@ -15,29 +15,32 @@ require 'coarnotify'
 #   CoarNotify.inbox_url
 #   CoarNotify.configure { |config| ... }
 module CoarNotify
+  # Add app directory to load path for autoloading
+  $LOAD_PATH.unshift(File.expand_path('../..', __dir__)) unless $LOAD_PATH.include?(File.expand_path('../..', __dir__))
+
   # Autoload models
   module Models
-    autoload :Notification, 'coar_notify/models/notification'
-    autoload :ServiceRegistry, 'coar_notify/models/service_registry'
+    autoload :Notification, File.expand_path('models/notification', __dir__)
+    autoload :ServiceRegistry, File.expand_path('models/service_registry', __dir__)
   end
 
   # Autoload services
   module Services
-    autoload :Sender, 'coar_notify/services/sender'
-    autoload :Receiver, 'coar_notify/services/receiver'
-    autoload :Processor, 'coar_notify/services/processor'
-    autoload :GitHubNotifier, 'coar_notify/services/github_notifier'
+    autoload :Sender, File.expand_path('services/sender', __dir__)
+    autoload :Receiver, File.expand_path('services/receiver', __dir__)
+    autoload :Processor, File.expand_path('services/processor', __dir__)
+    autoload :GitHubNotifier, File.expand_path('services/github_notifier', __dir__)
   end
 
   # Autoload workers
   module Workers
-    autoload :SendWorker, 'coar_notify/workers/send_worker'
-    autoload :ReceiveWorker, 'coar_notify/workers/receive_worker'
+    autoload :SendWorker, File.expand_path('workers/send_worker', __dir__)
+    autoload :ReceiveWorker, File.expand_path('workers/receive_worker', __dir__)
   end
 
   # Autoload routes
   module Routes
-    autoload :Inbox, 'coar_notify/routes/inbox'
+    autoload :Inbox, File.expand_path('routes/inbox', __dir__)
   end
 
   class << self
