@@ -18,6 +18,11 @@ module CoarNotify
     #   Notification.received.pending.all
     #   Notification.for_paper('10.55458/neurolibre.00027').all
     class Notification < Sequel::Model(:coar_notifications)
+      # Use the shared database connection from CoarNotify module
+      def self.db
+        CoarNotify.database
+      end
+
       plugin :timestamps, update_on_create: true
       plugin :validation_helpers
 

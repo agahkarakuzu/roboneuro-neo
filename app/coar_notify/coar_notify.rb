@@ -90,9 +90,14 @@ module CoarNotify
     def init!
       return unless enabled?
 
+      # Establish database connection first
+      @database = establish_database_connection
+
       setup_database
       run_migrations if auto_migrate?
-      load_models
+
+      # Models will use the shared database connection via CoarNotify.database
+      # No need to load them here - they'll be autoloaded when needed
     end
 
     private
@@ -122,11 +127,6 @@ module CoarNotify
 
     def auto_migrate?
       ENV['COAR_AUTO_MIGRATE'] == 'true'
-    end
-
-    def load_models
-      # Ensure models use our database connection
-      Models::Notification.db = database
     end
   end
 end
