@@ -3,6 +3,9 @@
 require 'sequel'
 require 'coarnotify'
 
+# Enable PostgreSQL array support
+Sequel.extension :pg_array
+
 module CoarNotify
   module Models
     # Notification model for persisting COAR Notify notifications
@@ -25,6 +28,7 @@ module CoarNotify
 
       plugin :timestamps, update_on_create: true
       plugin :validation_helpers
+      plugin :pg_array
 
       # Scopes for common queries
       dataset_module do
@@ -142,18 +146,23 @@ module CoarNotify
         # @param extra_attrs [Hash] additional attributes (issue_id, etc.)
         # @return [Notification] created record
         def create_from_coar(notification, direction, extra_attrs = {})
+          # Extract types and wrap in Sequel.pg_array for PostgreSQL
+          notif_types = extract_types(notification.type)
+          obj_types = extract_types(notification.object&.type)
+          ctx_types = extract_types(notification.context&.type)
+
           create(
             notification_id: notification.id,
             direction: direction,
-            notification_types: extract_types(notification.type),
+            notification_types: notif_types ? Sequel.pg_array(notif_types) : nil,
             origin_id: notification.origin.id,
             origin_inbox: notification.origin&.inbox,
             target_id: notification.target.id,
             target_inbox: notification.target&.inbox,
             object_id: notification.object.id,
-            object_type: extract_types(notification.object&.type),
+            object_type: obj_types ? Sequel.pg_array(obj_types) : nil,
             context_id: notification.context&.id,
-            context_type: extract_types(notification.context&.type),
+            context_type: ctx_types ? Sequel.pg_array(ctx_types) : nil,
             in_reply_to: (notification.respond_to?(:in_reply_to) ? notification.in_reply_to : nil),
             actor_id: notification.actor&.id,
             actor_name: notification.actor&.name,
