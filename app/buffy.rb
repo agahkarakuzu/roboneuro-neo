@@ -2,6 +2,8 @@ require 'sinatra/base'
 require 'sinatra/config_file'
 require_relative 'sinatra_ext/github_webhook_filter'
 require_relative 'lib/responders_loader'
+require_relative 'coar_notify/coar_notify'
+require_relative 'coar_notify/routes/inbox'
 
 class Buffy < Sinatra::Base
   include RespondersLoader
@@ -11,6 +13,14 @@ class Buffy < Sinatra::Base
   config_file "../config/settings-#{settings.environment}.yml"
 
   set :root, File.dirname(__FILE__)
+
+  # Initialize COAR Notify if enabled
+  configure do
+    CoarNotify.init! if CoarNotify.enabled?
+  end
+
+  # Mount COAR Notify routes
+  use CoarNotify::Routes::Inbox
 
   post '/dispatch' do
     responders.respond(@message, @context)
