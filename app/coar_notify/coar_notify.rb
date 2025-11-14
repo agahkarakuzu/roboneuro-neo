@@ -119,6 +119,7 @@ module CoarNotify
       # Enable PostgreSQL array support if using PostgreSQL
       if db.database_type == :postgres
         db.extension :pg_array
+        db.extension :pg_json  # For JSONB column support
       end
 
       db
