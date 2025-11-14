@@ -3,6 +3,9 @@
 require 'sequel'
 require 'coarnotify'
 
+# Load monkey patches for coarnotifyrb library bugs
+require_relative 'coarnotify_patches'
+
 # CoarNotify module for COAR Notify protocol integration
 #
 # This module implements W3C Linked Data Notifications (LDN) and
