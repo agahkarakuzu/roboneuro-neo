@@ -1,6 +1,12 @@
 # Simplified Puma config for debugging - single worker, no preload
 # Usage: bundle exec puma -C ./puma-debug.rb
 
+# Load .env file if it exists
+if File.exist?('.env')
+  require 'dotenv'
+  Dotenv.load('.env')
+end
+
 threads 1, 5
 port ENV.fetch("PORT") { 3000 }
 environment ENV.fetch("RACK_ENV") { "development" }
