@@ -15,16 +15,19 @@
   },
   "object": {
     "id": "https://prereview.org/review/12345",
+    "ietf:cite-as": "https://doi.org/10.5555/12345678",
     "type": [
-      "Document",
+      "Page",
       "sorg:Review"
-    ],
-    "ietf:cite-as": "https://doi.org/10.5555/12345678"
+    ]
   },
   "context": {
-    "id": "https://doi.org/10.55458/neurolibre.00001",
-    "ietf:cite-as": "https://doi.org/10.55458/neurolibre.00001",
-    "type": "sorg:ScholarlyArticle"
+    "id": "https://doi.org/10.55458/neurolibre.00001"
+  },
+  "target": {
+    "id": "https://robo.neurolibre.org",
+    "inbox": "https://robo.neurolibre.org/coar/inbox",
+    "type": "Service"
   },
   "actor": {
     "id": "https://prereview.org",
