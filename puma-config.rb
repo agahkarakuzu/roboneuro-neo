@@ -8,7 +8,7 @@ environment ENV.fetch("RACK_ENV") { "development" }
 
 # Enable stdout logging in development
 if ENV.fetch("RACK_ENV") { "development" } == "development"
-  stdout_redirect stdout: 'log/puma_stdout.log', stderr: 'log/puma_stderr.log', append: true
+  stdout_redirect 'log/puma_stdout.log', 'log/puma_stderr.log', append: true
 end
 
 preload_app!
