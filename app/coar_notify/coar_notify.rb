@@ -2,6 +2,7 @@
 
 require 'sequel'
 require 'coarnotify'
+require 'logger'
 
 # CoarNotify module for COAR Notify protocol integration
 #
@@ -111,6 +112,9 @@ module CoarNotify
       end
 
       db = Sequel.connect(database_url)
+
+      # Enable SQL logging to debug query generation issues
+      db.loggers << Logger.new($stderr)
 
       # Enable PostgreSQL array support if using PostgreSQL
       if db.database_type == :postgres
