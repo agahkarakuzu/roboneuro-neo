@@ -49,7 +49,7 @@ buffy:
     reminders:
       only: editors
     check_references:
-      description: "Check the references of the paper for missing DOIs"
+      description: "Check the references of the PDF for missing DOIs"
       example_invocation: "@roboneuro check references"
     repo_checks:
       description: "Perform checks on the repository"
@@ -82,6 +82,10 @@ buffy:
               repository_url: new_value
             silent: true
     openjournals_set_archive:
+      only: editors
+    neurolibre_set_archive:
+      only: editors
+    neurolibre_set_book:
       only: editors
     ping_track_eics:
       only: editors
@@ -126,6 +130,128 @@ buffy:
             editor: match_data_1
           success_msg: Invitation to edit this submission sent!
           error_msg: "There was a problem inviting the user to edit this submission."
+      - neurolibre_build_myst:
+          only: editors
+          command: "build (\\S+) myst at runtime (\\S+)"
+          description: "Builds myst article. First argument is the commit hash, second is the binder hash."
+          url: "https://preview.neurolibre.org/api/myst/build"
+          headers:
+            username: <%= ENV['PREVIEW_API_USER'] %>
+            password: <%= ENV['PREVIEW_API_KEY'] %>
+          data_from_issue:
+            - target-repository
+            - issue_id
+          mapping:
+            id: issue_id
+            repository_url: target-repository
+            commit_hash: match_data_1
+            binder_hash: match_data_2
+          send_only_mapped: true
+          silent: true
+      - neurolibre_fork_sync_upstream:
+          only: editors
+          command: "sync upstream"
+          description: "Syncs the upstream repository"
+          url: "https://preview.neurolibre.org/api/sync/fork"
+          headers:
+            username: <%= ENV['PREVIEW_API_USER'] %>
+            password: <%= ENV['PREVIEW_API_KEY'] %>
+          data_from_issue:
+            - target-repository
+            - preprint-version
+            - issue_id
+          mapping:
+            id: issue_id
+            repository_url: target-repository
+            preprint_version: preprint-version
+          send_only_mapped: true  
+          silent: true
+      - neurolibre_build_latest_preview_myst:
+          only: editors
+          command: "build myst preview"
+          description: "Builds myst article for preview from the latest commit"
+          url: "https://preview.neurolibre.org/api/myst/build"
+          headers:
+            username: <%= ENV['PREVIEW_API_USER'] %>
+            password: <%= ENV['PREVIEW_API_KEY'] %>
+          data_from_issue:
+            - target-repository
+            - issue_id
+          query_params:
+            commit_hash: latest
+            binder_hash: latest
+            is_prod: false
+            build_cache: true
+          mapping:
+            id: issue_id
+            repository_url: target-repository
+          send_only_mapped: true
+          silent: true
+      - neurolibre_build_latest_noexec_myst:
+          only: editors
+          command: "build myst preview noexec"
+          description: "Builds myst article for preview from the latest commit"
+          url: "https://preview.neurolibre.org/api/myst/build"
+          headers:
+            username: <%= ENV['PREVIEW_API_USER'] %>
+            password: <%= ENV['PREVIEW_API_KEY'] %>
+          data_from_issue:
+            - target-repository
+            - issue_id
+          query_params:
+            commit_hash: latest
+            binder_hash: noexec
+            is_prod: false
+            build_cache: true
+          mapping:
+            id: issue_id
+            repository_url: target-repository
+          send_only_mapped: true
+          silent: true
+      - neurolibre_build_latest_noexec_nocache_myst:
+          only: editors
+          command: "build myst preview noexec nocache"
+          description: "Builds myst article for preview from the latest commit"
+          url: "https://preview.neurolibre.org/api/myst/build"
+          headers:
+            username: <%= ENV['PREVIEW_API_USER'] %>
+            password: <%= ENV['PREVIEW_API_KEY'] %>
+          data_from_issue:
+            - target-repository
+            - issue_id
+          query_params:
+            commit_hash: latest
+            binder_hash: noexec
+            is_prod: false
+            build_cache: false
+          mapping:
+            id: issue_id
+            repository_url: target-repository
+          send_only_mapped: true
+          silent: true
+      - neurolibre_build_production_noexec_myst:
+          only: editors
+          command: "build myst production noexec"
+          description: "Builds myst article for preview from the latest commit"
+          url: "https://preview.neurolibre.org/api/myst/build"
+          headers:
+            username: <%= ENV['PREVIEW_API_USER'] %>
+            password: <%= ENV['PREVIEW_API_KEY'] %>
+          data_from_issue:
+            - target-repository
+            - issue_id
+            - preprint-version
+          query_params:
+            commit_hash: latest
+            binder_hash: noexec
+            is_prod: true
+            build_cache: true
+          mapping:
+            id: issue_id
+            repository_url: target-repository
+            prod_version: preprint-version
+          send_only_mapped: true
+          silent: true
     github_action:
       - draft_paper:
           command: generate pdf
@@ -137,8 +263,10 @@ buffy:
             - branch
             - target-repository
             - issue_id
+            - preprint-version
           mapping:
             repository_url: target-repository
+            preprint_version: preprint-version
       - recommend_acceptance:
           if:
             value_matches:
@@ -275,3 +403,266 @@ buffy:
         silent: true
         template_file: "review_started.md"
         close: true
+    neurolibre_preview_server_status:
+      only: editors
+      external_call:
+        url: "https://preview.neurolibre.org/api/heartbeat"
+        method: "get"
+        headers:
+          username: <%= ENV['PREVIEW_API_USER'] %>
+          password: <%= ENV['PREVIEW_API_KEY'] %>
+        mapping:
+          id: issue_id
+        silent: false
+    neurolibre_preprint_server_status:
+      only: editors
+      external_call:
+        url: "https://preprint.neurolibre.org/api/heartbeat"
+        method: "get"
+        headers:
+          username: <%= ENV['PREVIEW_API_USER'] %>
+          password: <%= ENV['PREVIEW_API_KEY'] %>
+        mapping:
+          id: issue_id
+        silent: false
+    neurolibre_build_book:
+      data_from_issue:
+      - branch
+      - target-repository
+      - issue_id
+    neurolibre_build_forked_book:
+      data_from_issue:
+      - branch
+      - target-repository
+      - issue_id
+    neurolibre_preprint_sync_data:
+      only: editors
+      external_call:
+        url: "https://preprint.neurolibre.org/api/data/sync"
+        method: "post"
+        headers:
+          username: <%= ENV['PREVIEW_API_USER'] %>
+          password: <%= ENV['PREVIEW_API_KEY'] %>
+        data_from_issue:
+          - target-repository
+        mapping:
+          id: issue_id
+          repository_url: target-repository
+        silent: true
+    neurolibre_preprint_sync_book:
+      only: editors
+      external_call:
+        url: "https://preprint.neurolibre.org/api/book/sync"
+        method: "post"
+        headers:
+          username: <%= ENV['PREVIEW_API_USER'] %>
+          password: <%= ENV['PREVIEW_API_KEY'] %>
+        data_from_issue:
+          - target-repository
+        mapping:
+          id: issue_id
+          repository_url: target-repository
+        silent: true
+    neurolibre_production_start:
+      only: editors
+      external_call:
+        url: "https://preprint.neurolibre.org/api/production/start"
+        method: "post"
+        headers:
+          username: <%= ENV['PREVIEW_API_USER'] %>
+          password: <%= ENV['PREVIEW_API_KEY'] %>
+        data_from_issue:
+          - target-repository
+        mapping:
+          id: issue_id
+          repository_url: target-repository
+        silent: true
+    neurolibre_zenodo_create_buckets:
+      only: editors
+      external_call:
+        url: "https://preprint.neurolibre.org/api/zenodo/buckets"
+        method: "post"
+        headers:
+          username: <%= ENV['PREVIEW_API_USER'] %>
+          password: <%= ENV['PREVIEW_API_KEY'] %>
+        data_from_issue:
+          - target-repository
+        mapping:
+          id: issue_id
+          repository_url: target-repository
+        silent: true
+    neurolibre_zenodo_status:
+      only: editors
+      external_call:
+        url: "https://preprint.neurolibre.org/api/zenodo/status"
+        method: "post"
+        headers:
+          username: <%= ENV['PREVIEW_API_USER'] %>
+          password: <%= ENV['PREVIEW_API_KEY'] %>
+        mapping:
+          id: issue_id
+        silent: true
+    neurolibre_sync_pdf:
+      only: editors
+      external_call:
+        url: "https://preprint.neurolibre.org/api/pdf/sync"
+        method: "post"
+        headers:
+          username: <%= ENV['PREVIEW_API_USER'] %>
+          password: <%= ENV['PREVIEW_API_KEY'] %>
+        mapping:
+          id: issue_id
+    neurolibre_zenodo_upload_book:
+      only: editors
+      external_call:
+        url: "https://preprint.neurolibre.org/api/zenodo/upload/book"
+        method: "post"
+        headers:
+          username: <%= ENV['PREVIEW_API_USER'] %>
+          password: <%= ENV['PREVIEW_API_KEY'] %>
+        data_from_issue:
+          - target-repository
+        mapping:
+          id: issue_id
+          repository_url: target-repository
+        silent: true
+    neurolibre_zenodo_upload_repository:
+      only: editors
+      external_call:
+        url: "https://preprint.neurolibre.org/api/zenodo/upload/repository"
+        method: "post"
+        headers:
+          username: <%= ENV['PREVIEW_API_USER'] %>
+          password: <%= ENV['PREVIEW_API_KEY'] %>
+        data_from_issue:
+          - target-repository
+        mapping:
+          id: issue_id
+          repository_url: target-repository
+        silent: true
+    neurolibre_zenodo_upload_docker:
+      only: editors
+      external_call:
+        url: "https://preprint.neurolibre.org/api/zenodo/upload/docker"
+        method: "post"
+        headers:
+          username: <%= ENV['PREVIEW_API_USER'] %>
+          password: <%= ENV['PREVIEW_API_KEY'] %>
+        data_from_issue:
+          - target-repository
+        mapping:
+          id: issue_id
+          repository_url: target-repository
+        silent: true
+    neurolibre_zenodo_upload_data:
+      only: editors
+      external_call:
+        url: "https://preprint.neurolibre.org/api/zenodo/upload/data"
+        method: "post"
+        headers:
+          username: <%= ENV['PREVIEW_API_USER'] %>
+          password: <%= ENV['PREVIEW_API_KEY'] %>
+        data_from_issue:
+          - target-repository
+        mapping:
+          id: issue_id
+          repository_url: target-repository
+        silent: true
+    neurolibre_zenodo_flush:
+      only: editors
+      external_call:
+        url: "https://preprint.neurolibre.org/api/zenodo/flush"
+        method: "post"
+        headers:
+          username: <%= ENV['PREVIEW_API_USER'] %>
+          password: <%= ENV['PREVIEW_API_KEY'] %>
+        data_from_issue:
+          - target-repository
+        mapping:
+          id: issue_id
+          repository_url: target-repository
+        silent: true
+    neurolibre_zenodo_publish:
+      only: editors
+      external_call:
+        url: "https://preprint.neurolibre.org/api/zenodo/publish"
+        method: "post"
+        headers:
+          username: <%= ENV['PREVIEW_API_USER'] %>
+          password: <%= ENV['PREVIEW_API_KEY'] %>
+        data_from_issue:
+          - target-repository
+        mapping:
+          id: issue_id
+          repository_url: target-repository
+        silent: true
+    neurolibre_draft_extended_pdf:
+      only: editors
+      external_call:
+        url: "https://preprint.neurolibre.org/api/pdf/draft"
+        method: "post"
+        headers:
+          username: <%= ENV['PREVIEW_API_USER'] %>
+          password: <%= ENV['PREVIEW_API_KEY'] %>
+        data_from_issue:
+          - target-repository
+        mapping:
+          id: issue_id
+          repository_url: target-repository
+        silent: true
+    neurolibre_binder_build:
+      only: editors
+      external_call:
+        url: "https://preprint.neurolibre.org/api/binder/build"
+        method: "post"
+        headers:
+          username: <%= ENV['PREVIEW_API_USER'] %>
+          password: <%= ENV['PREVIEW_API_KEY'] %>
+        data_from_issue:
+          - target-repository
+        mapping:
+          id: issue_id
+          repository_url: target-repository
+        silent: true
+    neurolibre_sync_myst:
+      only: editors
+      external_call:
+        url: "https://preprint.neurolibre.org/api/sync/myst"
+        method: "post"
+        headers:
+          username: <%= ENV['PREVIEW_API_USER'] %>
+          password: <%= ENV['PREVIEW_API_KEY'] %>
+        data_from_issue:
+          - target-repository
+        mapping:
+          id: issue_id
+          repository_url: target-repository
+        silent: true
+    neurolibre_cache_data:
+      only: editors
+      external_call:
+        url: "https://preview.neurolibre.org/api/data/cache"
+        method: "post"
+        headers:
+          username: <%= ENV['PREVIEW_API_USER'] %>
+          password: <%= ENV['PREVIEW_API_KEY'] %>
+        data_from_issue:
+          - target-repository
+        mapping:
+          id: issue_id
+          repository_url: target-repository
+        silent: true
+    neurolibre_zenodo_upload_myst:
+      only: editors
+      external_call:
+        url: "https://preprint.neurolibre.org/api/zenodo/upload/myst"
+        method: "post"
+        headers:
+          username: <%= ENV['PREVIEW_API_USER'] %>
+          password: <%= ENV['PREVIEW_API_KEY'] %>
+        data_from_issue:
+          - target-repository
+        mapping:
+          id: issue_id
+          repository_url: target-repository
+        silent: true

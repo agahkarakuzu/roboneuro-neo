@@ -1,8 +1,12 @@
+require 'base64'
+require_relative '../lib/logging'
+
 class ExternalServiceWorker < BuffyWorker
+   # include Logging
 
   def perform(service, locals)
     load_context_and_env(locals)
-
+    
     http_method = service['method'] || 'post'
     url = service['url']
     headers = service['headers'] || {}
@@ -16,20 +20,41 @@ class ExternalServiceWorker < BuffyWorker
     inputs_from_issue = service['data_from_issue'] || {}
     mapped_parameters = {}
 
-    inputs_from_issue.each do |input_from_issue|
-      mapped_parameters[input_from_issue] = locals[input_from_issue].to_s
+    if service['send_only_mapped']
+      service_mapping.each_pair do |k, v|
+        mapped_parameters[k] = locals.delete(v) if locals.key?(v)
+      end
+    else
+      inputs_from_issue.each do |input_from_issue|
+        mapped_parameters[input_from_issue] = locals[input_from_issue].to_s
+      end
+
+      service_mapping.each_pair do |k, v|
+        mapped_parameters[k] = locals.delete(v)
+      end
+
     end
 
-    service_mapping.each_pair do |k, v|
-      mapped_parameters[k] = locals.delete(v)
-    end
+    parameters = query_parameters.merge(mapped_parameters)
 
-    parameters = {}.merge(query_parameters, mapped_parameters)
+    # @NeuroLibre add conditional auth
+    if headers['username'] && headers['password']
+      headers = {'Authorization' => "Basic " + Base64.strict_encode64("#{headers['username']}:#{headers['password']}")}.merge(headers)
+      headers.delete('username')
+      headers.delete('password')
+    end
 
     if http_method.downcase == 'get'
       response = Faraday.get(url, parameters, headers)
     else
+      
       post_headers = {'Content-Type' => 'application/json', 'Accept' => 'application/json'}.merge(headers)
+      # @Neurolibre, this is a required temporary solution for 
+      # python compatibility.
+      if headers['Authorization']
+        parameters.delete('target-repository')
+      end
+      Logger.new(STDOUT).warn(parameters.to_json)
       response = Faraday.post(url, parameters.to_json, post_headers)
     end
 

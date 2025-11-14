@@ -21,24 +21,18 @@ class Buffy < Sinatra::Base
     "#{settings.buffy[:env][:bot_github_user]} in #{settings.environment}: up and running!"
   end
 
-  # get '/' do
-  #   "👋🤖"
-  # end
-
   get '/' do
     erb :neurolibre
   end
 
   post '/neurolibre' do
     sha = SecureRandom.hex
-    branch = params[:branch].empty? ? nil : params[:branch]
-    if params[:journal] == 'Summary PDF'
-      job_id = PaperPreviewWorker.perform_async(params[:repository], params[:journal], branch, sha)
-    elsif params[:journal] == 'Reproducible Preprint'
-      #job_id = JBPreviewWorker.perform_async(params[:repository], params[:journal], branch, sha)
-      job_id = NLPreviewWorker.perform_async(params[:repository], params[:journal], params[:email], branch, sha)
-    end
-    redirect "/preview?id=#{job_id}"
+    branch = params[:branch]
+    repo =  params[:repository]
+    email = params[:email]
+    executable = params[:journal]
+    job_id = NeurolibreBookBuildTestWorker.perform_async(repo, branch, email, executable)
+    erb :submitted
   end
 
 end
