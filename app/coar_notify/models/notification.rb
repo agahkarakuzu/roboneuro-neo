@@ -157,7 +157,7 @@ module CoarNotify
         # @param extra_attrs [Hash] additional attributes (issue_id, etc.)
         # @return [Notification] created record
         def create_from_coar(notification, direction, extra_attrs = {})
-          # Extract types and wrap in Sequel.pg_array for PostgreSQL
+          # Extract types - Sequel will handle array serialization automatically
           notif_types = extract_types(notification.type)
           obj_types = extract_types(notification.object&.type)
           ctx_types = extract_types(notification.context&.type)
@@ -173,7 +173,7 @@ module CoarNotify
           create(
             notification_id: notification.id,
             direction: direction,
-            notification_types: notif_types ? Sequel.pg_array(notif_types) : nil,
+            notification_types: notif_types,
             origin_id: notification.origin.id,
             origin_inbox: notification.origin&.inbox,
             target_id: notification.target.id,
