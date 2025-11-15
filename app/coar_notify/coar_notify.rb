@@ -118,8 +118,13 @@ module CoarNotify
       # Enable SQL logging to debug query generation issues
       db.loggers << Logger.new($stderr)
 
-      # Enable PostgreSQL array support if using PostgreSQL
+      # Enable PostgreSQL extensions globally and on database
       if db.database_type == :postgres
+        # Load extensions globally on Sequel module (required for Sequel.pg_jsonb, etc.)
+        Sequel.extension :pg_array
+        Sequel.extension :pg_json
+
+        # Also load on database instance (required for column operations)
         db.extension :pg_array
         db.extension :pg_json  # For JSONB column support
       end
