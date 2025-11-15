@@ -163,11 +163,11 @@ module CoarNotify
           ctx_types = extract_types(notification.context&.type)
 
           # Use provided JSON payload if available, otherwise parse notification
-          # Wrap in Sequel.pg_jsonb() to properly serialize as JSONB column
+          # Pass hash directly - Sequel will serialize to JSONB automatically
           payload = if extra_attrs[:json_payload]
-                      Sequel.pg_jsonb(JSON.parse(extra_attrs.delete(:json_payload)))
+                      JSON.parse(extra_attrs.delete(:json_payload))
                     else
-                      Sequel.pg_jsonb(parse_payload(notification))
+                      parse_payload(notification)
                     end
 
           create(
