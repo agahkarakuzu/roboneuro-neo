@@ -5,8 +5,8 @@ if ENV["CUSTOM_RUBY_VERSION"]
 end
 
 gem 'octokit'
-gem 'sinatra', '3.0.5'
-gem 'sinatra-contrib', '3.0.5'
+gem 'sinatra', '4.1.1'
+gem 'sinatra-contrib', '4.1.1'
 gem 'openssl'
 gem 'puma'
 gem 'sidekiq'
@@ -19,7 +19,6 @@ gem 'github-linguist'
 gem 'licensee'
 gem 'issue'
 gem 'chronic'
-gem "ruby-openai"
 
 group :test do
   gem 'rack-test'

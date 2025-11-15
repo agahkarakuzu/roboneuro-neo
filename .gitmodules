@@ -1,6 +1,0 @@
-[submodule "coar-notify.net"]
-	path = coar-notify.net
-	url = https://github.com/coar-notify/coar-notify.net
-[submodule "coarnotifyrb"]
-	path = coarnotifyrb
-	url = https://github.com/coar-notify/coarnotifyrb
