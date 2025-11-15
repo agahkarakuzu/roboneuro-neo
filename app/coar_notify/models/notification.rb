@@ -98,9 +98,12 @@ module CoarNotify
         if status && !['pending', 'processing', 'processed', 'failed'].include?(status)
           errors.add(:status, 'must be pending, processing, processed, or failed')
         end
-        # Check uniqueness manually
-        if new? && notification_id && self.class.where(notification_id: notification_id).count > 0
-          errors.add(:notification_id, 'is already taken')
+        # Check uniqueness manually (notification_id must be unique per direction)
+        if new? && notification_id && direction
+          existing = self.class.where(notification_id: notification_id, direction: direction).count
+          if existing > 0
+            errors.add(:notification_id, 'is already taken for this direction')
+          end
         end
       end
 
