@@ -19,8 +19,10 @@ services:
       - AnnounceReview
       - Accept
       - Reject
-      - TentativelyAccept
-      - TentativelyReject
+      - TentativeAccept
+      - TentativeReject
+      - UndoOffer
+      - Unprocessable
 
   pci:
     name: "PCI Express"
@@ -31,6 +33,10 @@ services:
       - AnnounceEndorsement
       - Accept
       - Reject
+      - TentativeAccept
+      - TentativeReject
+      - UndoOffer
+      - Unprocessable
 
   sciety:
     name: "Sciety"
@@ -39,3 +45,4 @@ services:
     supported_patterns:
       - AnnounceReview
       - AnnounceRelationship
+      - AnnounceResource

@@ -20,6 +20,23 @@ module CoarNotify
   # Add app directory to load path for autoloading
   $LOAD_PATH.unshift(File.expand_path('../..', __dir__)) unless $LOAD_PATH.include?(File.expand_path('../..', __dir__))
 
+  # Autoload registry (pattern definitions)
+  module Registry
+    autoload :PatternRegistry, File.expand_path('registry/pattern_registry', __dir__)
+
+    # Pattern classes are auto-discovered by PatternRegistry
+    module Patterns
+    end
+  end
+
+  # Autoload handlers (received notification processors)
+  module Handlers
+    autoload :HandlerRegistry, File.expand_path('handlers/handler_registry', __dir__)
+    autoload :BaseHandler, File.expand_path('handlers/base_handler', __dir__)
+
+    # Individual handlers are auto-discovered by HandlerRegistry
+  end
+
   # Autoload models
   module Models
     autoload :Notification, File.expand_path('models/notification', __dir__)
@@ -30,7 +47,7 @@ module CoarNotify
   module Services
     autoload :Sender, File.expand_path('services/sender', __dir__)
     autoload :Receiver, File.expand_path('services/receiver', __dir__)
-    autoload :Processor, File.expand_path('services/processor', __dir__)
+    autoload :Processor, File.expand_path('services/processor', __dir__)  # DEPRECATED: Use Handlers instead
     autoload :GitHubNotifier, File.expand_path('services/github_notifier', __dir__)
   end
 

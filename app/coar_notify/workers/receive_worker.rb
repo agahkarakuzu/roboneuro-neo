@@ -44,18 +44,16 @@ module CoarNotify
           # Parse notification from stored payload
           notification = record.to_coar_object
 
-          # Process based on notification type
-          processor = Services::Processor.new
-          processor.process(notification, record)
-
-          # Mark as processed
-          record.mark_processed!
+          # Dispatch to appropriate handler
+          Handlers::HandlerRegistry.handle(notification, record)
 
           logger.info("COAR Notify: Successfully processed notification #{record.id} (#{record.primary_type})")
 
         rescue => e
-          # Mark as failed
-          record.mark_failed!(e)
+          # Mark as failed (handler already does this, but just in case)
+          unless record.status == 'failed'
+            record.mark_failed!(e)
+          end
 
           logger.error("COAR Notify: Failed to process notification #{record.id}: #{e.class} - #{e.message}")
           logger.error(e.backtrace.join("\n")) if e.backtrace

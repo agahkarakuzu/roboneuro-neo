@@ -292,6 +292,92 @@ module CoarNotify
         end
       end
 
+      # Send an UndoOffer notification to withdraw a previous request
+      #
+      # @param paper_data [Hash] paper metadata
+      # @option paper_data [String] :doi paper DOI
+      # @option paper_data [Integer] :issue_id GitHub issue ID
+      # @option paper_data [String] :withdrawal_reason reason for withdrawal (optional)
+      # @param service_name [String] target service name
+      # @param original_notification_id [String] ID of the notification being withdrawn
+      # @return [Hash] result with success status and notification details
+      # @raise [ArgumentError] if service is unknown or required data is missing
+      def send_undo_offer(paper_data, service_name, original_notification_id)
+        # Validate service
+        service_config = Models::ServiceRegistry.get(service_name)
+        raise ArgumentError, "Unknown service: #{service_name}" unless service_config
+
+        # Validate required data
+        validate_paper_data!(paper_data, [:doi, :issue_id])
+        raise ArgumentError, "original_notification_id is required" unless original_notification_id
+
+        # Create client
+        client = Coarnotify.client(inbox_url: service_config['inbox_url'])
+
+        # Build UndoOffer notification
+        notification = build_undo_offer(paper_data, service_config, original_notification_id)
+
+        # Validate and send
+        notification.validate
+
+        begin
+          response = client.send(notification, validate: true)
+
+          # Persist to database
+          record = Models::Notification.create_from_coar(
+            notification,
+            'sent',
+            issue_id: paper_data[:issue_id],
+            status: 'processed'
+          )
+
+          # Update original notification status
+          original = Models::Notification.where(
+            notification_id: original_notification_id,
+            direction: 'sent'
+          ).first
+
+          if original
+            original.update(
+              status: 'withdrawn',
+              error_message: 'Offer withdrawn by sender'
+            )
+          end
+
+          {
+            success: true,
+            notification_id: notification.id,
+            response_action: response.action,
+            response_location: response.location,
+            record_id: record.id,
+            service: service_name,
+            withdrawn_notification_id: original_notification_id
+          }
+        rescue Coarnotify::NotifyException => e
+          # Handle HTTP 200 (idempotent) as success
+          if e.message.include?('200')
+            record = Models::Notification.create_from_coar(
+              notification,
+              'sent',
+              issue_id: paper_data[:issue_id],
+              status: 'processed'
+            )
+
+            return {
+              success: true,
+              notification_id: notification.id,
+              response_action: 'already_received',
+              record_id: record.id,
+              service: service_name,
+              withdrawn_notification_id: original_notification_id
+            }
+          end
+
+          # For other errors, re-raise
+          raise
+        end
+      end
+
       private
 
       # Build RequestReview notification
@@ -369,6 +455,50 @@ module CoarNotify
         notification.object.type = ["ScholarlyArticle"]
 
         # Set actor
+        if paper_data[:editor_orcid] || paper_data[:editor_name]
+          notification.actor = Coarnotify::Core::Notify::NotifyActor.new
+          notification.actor.id = "https://orcid.org/#{paper_data[:editor_orcid]}" if paper_data[:editor_orcid]
+          notification.actor.name = paper_data[:editor_name] if paper_data[:editor_name]
+          notification.actor.type = "Person"
+        end
+
+        notification
+      end
+
+      # Build UndoOffer notification to withdraw a previous request
+      #
+      # @param paper_data [Hash] paper metadata
+      # @param service_config [Hash] service configuration
+      # @param original_notification_id [String] ID of notification being withdrawn
+      # @return [Coarnotify::Patterns::Undo] notification object
+      def build_undo_offer(paper_data, service_config, original_notification_id)
+        notification = Coarnotify::Patterns::Undo.new
+
+        # Generate unique notification ID
+        notification_uuid = SecureRandom.uuid
+        notification.id = "#{CoarNotify.inbox_url}/notifications/#{notification_uuid}"
+
+        # Set origin
+        notification.origin = Coarnotify::Core::Notify::NotifyService.new
+        notification.origin.id = CoarNotify.service_id
+        notification.origin.inbox = CoarNotify.inbox_url
+
+        # Set target
+        notification.target = Coarnotify::Core::Notify::NotifyService.new
+        notification.target.id = service_config['id']
+        notification.target.inbox = service_config['inbox_url']
+
+        # Set object (the notification being withdrawn)
+        notification.object = Coarnotify::Core::Notify::NotifyObject.new
+        notification.object.id = original_notification_id
+
+        # Set inReplyTo
+        notification.inReplyTo = original_notification_id
+
+        # Set summary (reason for withdrawal)
+        notification.summary = paper_data[:withdrawal_reason] || "The offer has been withdrawn"
+
+        # Set actor (if available)
         if paper_data[:editor_orcid] || paper_data[:editor_name]
           notification.actor = Coarnotify::Core::Notify::NotifyActor.new
           notification.actor.id = "https://orcid.org/#{paper_data[:editor_orcid]}" if paper_data[:editor_orcid]
