@@ -12,7 +12,7 @@ module CoarNotify
       set :public_folder, File.join(__dir__, '../../../public')
 
       # Main dashboard view
-      get '/coar/dashboard' do
+      get '/coar_notify/dashboard' do
         # Get filter parameters
         status_filter = params[:status]
         service_filter = params[:service]
@@ -48,11 +48,11 @@ module CoarNotify
         @current_service = service_filter
         @current_direction = direction_filter
 
-        erb :inbox
+        erb :dashboard
       end
 
       # View individual notification details
-      get '/coar/dashboard/:id' do
+      get '/coar_notify/dashboard/:id' do
         @notification = CoarNotify::Models::Notification.where(id: params[:id]).first
         halt 404, 'Notification not found' unless @notification
 
@@ -60,7 +60,7 @@ module CoarNotify
       end
 
       # API endpoint to get notification payload as JSON
-      get '/coar/dashboard/api/:id/payload' do
+      get '/coar_notify/dashboard/api/:id/payload' do
         content_type :json
         notification = CoarNotify::Models::Notification.where(id: params[:id]).first
         halt 404, { error: 'Notification not found' }.to_json unless notification

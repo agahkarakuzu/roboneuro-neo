@@ -98,9 +98,12 @@ module CoarNotify
         if status && !['pending', 'processing', 'processed', 'failed'].include?(status)
           errors.add(:status, 'must be pending, processing, processed, or failed')
         end
-        # Check uniqueness manually
-        if new? && notification_id && self.class.where(notification_id: notification_id).count > 0
-          errors.add(:notification_id, 'is already taken')
+        # Check uniqueness manually (notification_id must be unique per direction)
+        if new? && notification_id && direction
+          existing = self.class.where(notification_id: notification_id, direction: direction).count
+          if existing > 0
+            errors.add(:notification_id, 'is already taken for this direction')
+          end
         end
       end
 
@@ -157,23 +160,23 @@ module CoarNotify
         # @param extra_attrs [Hash] additional attributes (issue_id, etc.)
         # @return [Notification] created record
         def create_from_coar(notification, direction, extra_attrs = {})
-          # Extract types and wrap in Sequel.pg_array for PostgreSQL
+          # Extract types - Sequel will handle array serialization automatically
           notif_types = extract_types(notification.type)
           obj_types = extract_types(notification.object&.type)
           ctx_types = extract_types(notification.context&.type)
 
           # Use provided JSON payload if available, otherwise parse notification
-          # Wrap in Sequel.pg_jsonb() to properly serialize as JSONB column
+          # Pass hash directly - Sequel will serialize to JSONB automatically
           payload = if extra_attrs[:json_payload]
-                      Sequel.pg_jsonb(JSON.parse(extra_attrs.delete(:json_payload)))
+                      JSON.parse(extra_attrs.delete(:json_payload))
                     else
-                      Sequel.pg_jsonb(parse_payload(notification))
+                      parse_payload(notification)
                     end
 
           create(
             notification_id: notification.id,
             direction: direction,
-            notification_types: notif_types ? Sequel.pg_array(notif_types) : nil,
+            notification_types: notif_types,
             origin_id: notification.origin.id,
             origin_inbox: notification.origin&.inbox,
             target_id: notification.target.id,
@@ -260,9 +263,24 @@ module CoarNotify
         def parse_payload(notification)
           json_string = notification.to_json
           JSON.parse(json_string)
-        rescue JSON::ParserError
+        rescue JSON::ParserError, NoMethodError => e
+          # Log the error for debugging
+          warn "Failed to parse notification to JSON: #{e.class} - #{e.message}"
+          warn "Notification class: #{notification.class}"
+
           # Fallback: use notification's internal hash representation
-          notification.instance_variable_get(:@properties) || {}
+          properties = notification.instance_variable_get(:@properties) || {}
+
+          # If properties is still empty, try to extract basic structure
+          if properties.empty?
+            {
+              'id' => notification.respond_to?(:id) ? notification.id : nil,
+              'type' => notification.respond_to?(:type) ? notification.type : nil,
+              'error' => 'Failed to serialize notification to JSON'
+            }
+          else
+            properties
+          end
         end
       end
     end

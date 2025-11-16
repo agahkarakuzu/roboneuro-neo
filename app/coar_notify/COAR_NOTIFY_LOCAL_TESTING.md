@@ -66,6 +66,9 @@ psql -l | grep roboneuro
 
 ### 3. Set Environment Variables
 
+```bash
+ echo "postgresql://$(whoami)@localhost:5432/roboneuro_development"
+```
 Create a `.env` file in the project root:
 
 ```bash
