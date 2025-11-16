@@ -4,6 +4,7 @@
 # This migration creates the coar_notifications table for storing
 # both sent (outbox) and received (inbox) COAR Notify notifications
 # in compliance with the W3C Linked Data Notifications specification.
+# See: https://coar-notify.net/specification/
 
 Sequel.migration do
   change do
