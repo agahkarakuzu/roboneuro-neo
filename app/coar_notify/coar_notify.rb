@@ -3,6 +3,7 @@
 require 'sequel'
 require 'coarnotify'
 require 'logger'
+require_relative 'lib/config_loader'
 
 # CoarNotify module for COAR Notify protocol integration
 #
@@ -47,34 +48,51 @@ module CoarNotify
   end
 
   class << self
+    # Get configuration (loaded from YAML or ENV)
+    # @return [Hash] configuration hash
+    def config
+      @config ||= ConfigLoader.load
+    end
+
+    # Reset configuration (useful for testing)
+    def reset_config!
+      @config = nil
+      ConfigLoader.reset!
+    end
+
     # Check if COAR Notify is enabled
     # @return [Boolean] true if enabled
     def enabled?
-      ENV['COAR_NOTIFY_ENABLED'] == 'true'
+      # Try YAML config first, then ENV, then default
+      config[:enabled] || ENV['COAR_NOTIFY_ENABLED'] == 'true'
     end
 
     # Get the inbox URL for this instance
     # @return [String] inbox URL
     def inbox_url
-      ENV['COAR_INBOX_URL'] || 'https://robo.neurolibre.org/coar/inbox'
+      # Priority: YAML > ENV > default
+      config[:inbox_url] || ENV['COAR_INBOX_URL'] || 'https://robo.neurolibre.org/coar_notify/inbox'
     end
 
     # Get the service ID for this instance
     # @return [String] service ID
     def service_id
-      ENV['COAR_SERVICE_ID'] || 'https://neurolibre.org'
+      # Priority: YAML > ENV > default
+      config[:service_id] || ENV['COAR_SERVICE_ID'] || 'https://neurolibre.org'
     end
 
     # Check if IP whitelist is enabled
     # @return [Boolean] true if enabled
     def ip_whitelist_enabled?
-      ENV['COAR_IP_WHITELIST_ENABLED'] == 'true'
+      # Priority: YAML > ENV > default
+      config[:ip_whitelist_enabled] || ENV['COAR_IP_WHITELIST_ENABLED'] == 'true'
     end
 
     # Get allowed IPs for whitelist
     # @return [Array<String>] list of allowed IP addresses
     def allowed_ips
-      (ENV['COAR_ALLOWED_IPS'] || '').split(',').map(&:strip).reject(&:empty?)
+      # Priority: YAML > ENV > default
+      config[:allowed_ips] || parse_allowed_ips_from_env || []
     end
 
     # Get database connection
@@ -97,7 +115,6 @@ module CoarNotify
       @database = establish_database_connection
 
       setup_database
-      run_migrations if auto_migrate?
 
       # Models will use the shared database connection via CoarNotify.database
       # No need to load them here - they'll be autoloaded when needed
@@ -105,8 +122,15 @@ module CoarNotify
 
     private
 
+    def parse_allowed_ips_from_env
+      ips_string = ENV['COAR_ALLOWED_IPS']
+      return nil if ips_string.nil? || ips_string.empty?
+      ips_string.split(',').map(&:strip).reject(&:empty?)
+    end
+
     def establish_database_connection
-      database_url = ENV['DATABASE_URL']
+      # Priority: YAML > ENV > default
+      database_url = config[:database_url] || ENV['DATABASE_URL']
 
       unless database_url
         warn 'COAR Notify: DATABASE_URL not set, using in-memory SQLite (not recommended for production)'
@@ -115,8 +139,12 @@ module CoarNotify
 
       db = Sequel.connect(database_url)
 
-      # Enable SQL logging to debug query generation issues
-      db.loggers << Logger.new($stderr)
+      # SQL logging - configure via sql_log_level in config YAML or COAR_SQL_LOG_LEVEL env var
+      # Valid levels: DEBUG, INFO, WARN, ERROR, FATAL
+      logger = Logger.new($stderr)
+      log_level_str = config[:sql_log_level] || 'WARN'
+      logger.level = Logger.const_get(log_level_str.upcase)
+      db.loggers << logger
 
       # Enable PostgreSQL extensions globally and on database
       if db.database_type == :postgres
@@ -138,14 +166,5 @@ module CoarNotify
       # NOT using validation_helpers due to SQL generation bugs
     end
 
-    def run_migrations
-      migrations_path = File.join(__dir__, '../../db/migrations')
-      Sequel.extension :migration
-      Sequel::Migrator.run(database, migrations_path)
-    end
-
-    def auto_migrate?
-      ENV['COAR_AUTO_MIGRATE'] == 'true'
-    end
   end
 end

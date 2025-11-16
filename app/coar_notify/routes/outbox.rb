@@ -8,9 +8,9 @@ module CoarNotify
     # COAR Notify Outbox - Send notifications to remote services
     class Outbox < Sinatra::Base
       # Send a COAR Notify notification
-      # POST /coar/outbox
+      # POST /coar_notify/outbox
       # Body: JSON-LD COAR Notify notification
-      post '/coar/outbox' do
+      post '/coar_notify/outbox' do
         content_type :json
 
         # Parse JSON body
@@ -23,7 +23,7 @@ module CoarNotify
 
           # Send via the Sender service
           sender = CoarNotify::Services::Sender.new
-          result = sender.send_notification(notification)
+          result = sender.send_notification(notification, json_payload: json_body)
 
           if result[:success]
             # Return success response
@@ -70,9 +70,9 @@ module CoarNotify
       end
 
       # Helper endpoint to send common notification types
-      # POST /coar/outbox/endorsement
+      # POST /coar_notify/outbox/endorsement
       # Simplified payload for endorsing a preprint
-      post '/coar/outbox/endorsement' do
+      post '/coar_notify/outbox/endorsement' do
         content_type :json
 
         begin
@@ -115,7 +115,8 @@ module CoarNotify
           # Parse and send
           notification = Coarnotify.from_hash(notification_json)
           sender = CoarNotify::Services::Sender.new
-          result = sender.send_notification(notification)
+          # Pass the constructed JSON as payload
+          result = sender.send_notification(notification, json_payload: notification_json.to_json)
 
           if result[:success]
             status 202
@@ -138,8 +139,8 @@ module CoarNotify
       end
 
       # Helper endpoint to send review announcements
-      # POST /coar/outbox/announce-review
-      post '/coar/outbox/announce-review' do
+      # POST /coar_notify/outbox/announce-review
+      post '/coar_notify/outbox/announce-review' do
         content_type :json
 
         begin
@@ -181,7 +182,8 @@ module CoarNotify
 
           notification = Coarnotify.from_hash(notification_json)
           sender = CoarNotify::Services::Sender.new
-          result = sender.send_notification(notification)
+          # Pass the constructed JSON as payload
+          result = sender.send_notification(notification, json_payload: notification_json.to_json)
 
           if result[:success]
             status 202

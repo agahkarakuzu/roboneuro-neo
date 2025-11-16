@@ -1,12 +1,6 @@
 # Simplified Puma config for debugging - single worker, no preload
 # Usage: bundle exec puma -C ./puma-debug.rb
 
-# Load .env file if it exists
-if File.exist?('.env')
-  require 'dotenv'
-  Dotenv.load('.env')
-end
-
 threads 1, 5
 port ENV.fetch("PORT") { 3000 }
 environment ENV.fetch("RACK_ENV") { "development" }
@@ -14,10 +8,27 @@ environment ENV.fetch("RACK_ENV") { "development" }
 # No workers (single mode for easier debugging)
 # No preload (errors show immediately)
 
-puts "=" * 80
-puts "PUMA DEBUG MODE - Single worker, no preload"
-puts "Environment variables:"
-puts "  COAR_NOTIFY_ENABLED: #{ENV['COAR_NOTIFY_ENABLED']}"
-puts "  DATABASE_URL: #{ENV['DATABASE_URL'] ? ENV['DATABASE_URL'].gsub(/:[^:@]+@/, ':***@') : 'NOT SET'}"
-puts "  COAR_AUTO_MIGRATE: #{ENV['COAR_AUTO_MIGRATE']}"
-puts "=" * 80
+# Show configuration on startup
+begin
+  require_relative 'app/coar_notify/coar_notify'
+
+  puts "=" * 80
+  puts "PUMA DEBUG MODE - Single worker, no preload"
+  puts "Environment: #{ENV['RACK_ENV'] || 'development'}"
+  puts
+  puts "CoarNotify Configuration (from YAML):"
+  puts "  enabled: #{CoarNotify.enabled?}"
+  puts "  inbox_url: #{CoarNotify.inbox_url}"
+  puts "  service_id: #{CoarNotify.service_id}"
+  puts "  database_url: #{CoarNotify.config[:database_url] ? CoarNotify.config[:database_url].gsub(/:[^:@]+@/, ':***@') : 'NOT SET'}"
+  puts "  ip_whitelist_enabled: #{CoarNotify.ip_whitelist_enabled?}"
+  puts
+  puts "Configuration source: config/settings-#{ENV['RACK_ENV'] || 'development'}.yml"
+  puts "=" * 80
+rescue => e
+  puts "=" * 80
+  puts "PUMA DEBUG MODE - Single worker, no preload"
+  puts "Warning: Could not load CoarNotify configuration"
+  puts "Error: #{e.message}"
+  puts "=" * 80
+end

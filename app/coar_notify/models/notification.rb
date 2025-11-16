@@ -263,9 +263,24 @@ module CoarNotify
         def parse_payload(notification)
           json_string = notification.to_json
           JSON.parse(json_string)
-        rescue JSON::ParserError
+        rescue JSON::ParserError, NoMethodError => e
+          # Log the error for debugging
+          warn "Failed to parse notification to JSON: #{e.class} - #{e.message}"
+          warn "Notification class: #{notification.class}"
+
           # Fallback: use notification's internal hash representation
-          notification.instance_variable_get(:@properties) || {}
+          properties = notification.instance_variable_get(:@properties) || {}
+
+          # If properties is still empty, try to extract basic structure
+          if properties.empty?
+            {
+              'id' => notification.respond_to?(:id) ? notification.id : nil,
+              'type' => notification.respond_to?(:type) ? notification.type : nil,
+              'error' => 'Failed to serialize notification to JSON'
+            }
+          else
+            properties
+          end
         end
       end
     end

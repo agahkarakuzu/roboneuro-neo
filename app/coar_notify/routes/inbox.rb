@@ -8,9 +8,9 @@ module CoarNotify
     # Sinatra routes for COAR Notify inbox (W3C LDN compliant)
     #
     # Endpoints:
-    # - POST /coar/inbox - Receive notification
-    # - GET /coar/inbox - List received notifications
-    # - GET /coar/inbox/notifications/:id - Get specific notification
+    # - POST /coar_notify/inbox - Receive notification
+    # - GET /coar_notify/inbox - List received notifications
+    # - GET /coar_notify/inbox/notifications/:id - Get specific notification
     #
     # All endpoints return application/ld+json content type
     class Inbox < Sinatra::Base
@@ -27,7 +27,7 @@ module CoarNotify
         end
       end
 
-      # POST /coar/inbox - Receive notification (W3C LDN endpoint)
+      # POST /coar_notify/inbox - Receive notification (W3C LDN endpoint)
       #
       # Accepts JSON-LD notification, validates it, stores it, and
       # returns HTTP 201 Created with Location header.
@@ -38,7 +38,7 @@ module CoarNotify
       # - 400 Bad Request: Invalid notification
       # - 403 Forbidden: IP not whitelisted
       # - 500 Internal Server Error: Processing failed
-      post '/coar/inbox' do
+      post '/coar_notify/inbox' do
         content_type 'application/ld+json'
 
         begin
@@ -119,7 +119,7 @@ module CoarNotify
         end
       end
 
-      # GET /coar/inbox - List received notifications (W3C LDN endpoint)
+      # GET /coar_notify/inbox - List received notifications (W3C LDN endpoint)
       #
       # Returns a JSON-LD container with links to all received notifications.
       # Supports pagination via limit and offset query parameters.
@@ -130,7 +130,7 @@ module CoarNotify
       #
       # Returns:
       # - 200 OK: List of notification URLs
-      get '/coar/inbox' do
+      get '/coar_notify/inbox' do
         content_type 'application/ld+json'
 
         limit = [(params[:limit] || 100).to_i, 1000].min
@@ -142,7 +142,7 @@ module CoarNotify
         # W3C LDN-compliant response format
         ldp_container = {
           '@context' => 'http://www.w3.org/ns/ldp',
-          '@id' => "#{request.base_url}/coar/inbox/",
+          '@id' => "#{request.base_url}/coar_notify/inbox/",
           '@type' => 'ldp:Container',
           'ldp:contains' => notifications.map { |n| n.notification_id }
         }
@@ -150,18 +150,19 @@ module CoarNotify
         json_response(ldp_container)
       end
 
-      # GET /coar/inbox/notifications/:id - Get specific notification
+      # GET /coar_notify/inbox/notifications/:id - Get specific notification
       #
       # Returns the full JSON-LD payload of a specific notification.
       #
       # Returns:
       # - 200 OK: Notification payload
       # - 404 Not Found: Notification not found
-      get '/coar/inbox/notifications/:id' do
+      get '/coar_notify/inbox/notifications/:id' do
         content_type 'application/ld+json'
 
-        # Reconstruct full notification ID
-        notification_id = "#{request.base_url}/coar/inbox/notifications/#{params[:id]}"
+        # Use the notification ID from the URL parameter directly
+        # The ID is already the full URN/URI (e.g., urn:uuid:...)
+        notification_id = params[:id]
 
         receiver = Services::Receiver.new
         notification = receiver.get_notification(notification_id)
@@ -173,7 +174,7 @@ module CoarNotify
           status 404
           json_response(
             error: 'Notification not found',
-            id: notification_id
+            id: "#{request.base_url}/coar_notify/inbox/notifications/#{notification_id}"
           )
         end
       end

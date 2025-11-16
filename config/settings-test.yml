@@ -666,3 +666,13 @@ buffy:
           id: issue_id
           repository_url: target-repository
         silent: true
+
+coar_notify:
+  env:
+    enabled: true
+    inbox_url: http://test.example.com/coar_notify/inbox
+    service_id: https://neurolibre.org
+    database_url: <%= ENV['DATABASE_URL'] || 'sqlite::memory:' %>
+    ip_whitelist_enabled: false
+    allowed_ips: []
+    sql_log_level: ERROR  # DEBUG, INFO, WARN, ERROR, FATAL

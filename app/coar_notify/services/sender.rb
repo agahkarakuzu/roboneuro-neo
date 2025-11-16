@@ -26,7 +26,8 @@ module CoarNotify
       # Send a generic COAR Notify notification
       #
       # @param notification [Coarnotify::Patterns::*] notification object from coarnotifyrb
-      # @param extra_attrs [Hash] optional attributes (issue_id, etc.)
+      # @param extra_attrs [Hash] optional attributes (issue_id, json_payload, etc.)
+      # @option extra_attrs [String] :json_payload original JSON string (optional but recommended)
       # @return [Hash] result with success status and notification details
       def send_notification(notification, extra_attrs = {})
         # Validate notification
@@ -58,18 +59,84 @@ module CoarNotify
             record: record,
             record_id: record.id
           }
+        rescue Coarnotify::NotifyException => e
+          # Handle HTTP 200 (idempotent) as success
+          # The notification was already received, which is fine
+          if e.message.include?('200')
+            # Still persist to database as sent
+            begin
+              record = Models::Notification.create_from_coar(
+                notification,
+                'sent',
+                extra_attrs.merge(status: 'processed')
+              )
+
+              return {
+                success: true,
+                notification_id: notification.id,
+                response_action: 'already_received',
+                record: record,
+                record_id: record.id
+              }
+            rescue => db_error
+              # If we can't save to DB, log it but still return success
+              # since the notification WAS successfully sent/received
+              warn "Successfully sent notification but failed to persist: #{db_error.message}"
+              warn "Notification ID: #{notification.id}"
+
+              return {
+                success: true,
+                notification_id: notification.id,
+                response_action: 'already_received',
+                warning: 'Notification sent but not persisted to database'
+              }
+            end
+          end
+
+          # For other NotifyException errors, treat as failure
+          error_msg = "Failed to send notification: #{e.class} - #{e.message}"
+
+          # Try to persist failed notification with original JSON payload
+          begin
+            # Get the original JSON from the request that was sent
+            original_json = notification.to_json
+
+            record = Models::Notification.create_from_coar(
+              notification,
+              'sent',
+              extra_attrs.merge(
+                status: 'failed',
+                error_message: error_msg,
+                json_payload: original_json
+              )
+            )
+          rescue => db_error
+            # If we can't even save to DB, just log it
+            warn "Failed to persist failed notification: #{db_error.message}"
+          end
+
+          {
+            success: false,
+            error: error_msg,
+            notification_id: notification.id,
+            record: record
+          }
         rescue => e
           # Log error and return failure
           error_msg = "Failed to send notification: #{e.class} - #{e.message}"
 
           # Try to persist failed notification
           begin
+            # Get the original JSON from the request that was sent
+            original_json = notification.to_json
+
             record = Models::Notification.create_from_coar(
               notification,
               'sent',
               extra_attrs.merge(
                 status: 'failed',
-                error_message: error_msg
+                error_message: error_msg,
+                json_payload: original_json
               )
             )
           rescue => db_error
@@ -117,24 +184,47 @@ module CoarNotify
         notification.validate
 
         # Send notification
-        response = client.send(notification, validate: true)
+        begin
+          response = client.send(notification, validate: true)
 
-        # Persist to database
-        record = Models::Notification.create_from_coar(
-          notification,
-          'sent',
-          issue_id: paper_data[:issue_id],
-          status: 'processed' # Sent notifications are immediately 'processed'
-        )
+          # Persist to database
+          record = Models::Notification.create_from_coar(
+            notification,
+            'sent',
+            issue_id: paper_data[:issue_id],
+            status: 'processed' # Sent notifications are immediately 'processed'
+          )
 
-        {
-          success: true,
-          notification_id: notification.id,
-          response_action: response.action,
-          response_location: response.location,
-          record_id: record.id,
-          service: service_name
-        }
+          {
+            success: true,
+            notification_id: notification.id,
+            response_action: response.action,
+            response_location: response.location,
+            record_id: record.id,
+            service: service_name
+          }
+        rescue Coarnotify::NotifyException => e
+          # Handle HTTP 200 (idempotent) as success
+          if e.message.include?('200')
+            record = Models::Notification.create_from_coar(
+              notification,
+              'sent',
+              issue_id: paper_data[:issue_id],
+              status: 'processed'
+            )
+
+            return {
+              success: true,
+              notification_id: notification.id,
+              response_action: 'already_received',
+              record_id: record.id,
+              service: service_name
+            }
+          end
+
+          # For other errors, re-raise
+          raise
+        end
       end
 
       # Send a RequestEndorsement notification
@@ -158,24 +248,48 @@ module CoarNotify
 
         # Validate and send
         notification.validate
-        response = client.send(notification, validate: true)
 
-        # Persist to database
-        record = Models::Notification.create_from_coar(
-          notification,
-          'sent',
-          issue_id: paper_data[:issue_id],
-          status: 'processed'
-        )
+        begin
+          response = client.send(notification, validate: true)
 
-        {
-          success: true,
-          notification_id: notification.id,
-          response_action: response.action,
-          response_location: response.location,
-          record_id: record.id,
-          service: service_name
-        }
+          # Persist to database
+          record = Models::Notification.create_from_coar(
+            notification,
+            'sent',
+            issue_id: paper_data[:issue_id],
+            status: 'processed'
+          )
+
+          {
+            success: true,
+            notification_id: notification.id,
+            response_action: response.action,
+            response_location: response.location,
+            record_id: record.id,
+            service: service_name
+          }
+        rescue Coarnotify::NotifyException => e
+          # Handle HTTP 200 (idempotent) as success
+          if e.message.include?('200')
+            record = Models::Notification.create_from_coar(
+              notification,
+              'sent',
+              issue_id: paper_data[:issue_id],
+              status: 'processed'
+            )
+
+            return {
+              success: true,
+              notification_id: notification.id,
+              response_action: 'already_received',
+              record_id: record.id,
+              service: service_name
+            }
+          end
+
+          # For other errors, re-raise
+          raise
+        end
       end
 
       private
