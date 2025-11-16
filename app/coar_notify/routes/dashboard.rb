@@ -18,7 +18,7 @@ module CoarNotify
 
       # Enable sessions for flash messages
       enable :sessions
-      set :session_secret, ENV['ROBONEURO_SECRET'] || 'coar_notify_dashboard_secret'
+      set :session_secret, ENV['ROBONEURO_SECRET'] || 'coar_notify_dashboard_development_secret_key_min_64_chars_required_for_encryption'
 
       # Simple authentication helper
       helpers do
