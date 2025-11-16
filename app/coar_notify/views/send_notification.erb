@@ -1,0 +1,153 @@
+<h2>Send COAR Notification</h2>
+
+<form id="send-notification-form" method="POST" action="/coar/dashboard/send" class="send-form">
+
+  <!-- Step 1: Select Preprint -->
+  <div class="form-section">
+    <h3>1. Select Preprint</h3>
+    <div class="form-group">
+      <label for="issue_id">
+        GitHub Issue ID <span class="required">*</span>
+      </label>
+      <select id="issue_id" name="issue_id" required>
+        <option value="">-- Select a preprint --</option>
+        <% @papers.each do |paper| %>
+          <option value="<%= paper[:issue_id] %>" data-doi="<%= paper[:doi] %>" data-title="<%= paper[:title] %>">
+            #<%= paper[:issue_id] %> - <%= paper[:title] %> (<%= paper[:doi] %>)
+          </option>
+        <% end %>
+      </select>
+      <p class="help-text">Select the preprint you want to send a notification about</p>
+    </div>
+  </div>
+
+  <!-- Step 2: Select Notification Type -->
+  <div class="form-section">
+    <h3>2. Select Notification Type</h3>
+    <div class="form-group">
+      <label for="pattern">
+        Notification Pattern <span class="required">*</span>
+      </label>
+      <select id="pattern" name="pattern" required>
+        <option value="">-- Select notification type --</option>
+        <% @send_patterns.each do |pattern_name, pattern_class| %>
+          <option value="<%= pattern_name %>" data-description="<%= pattern_class.description %>">
+            <%= pattern_name %>
+          </option>
+        <% end %>
+      </select>
+      <p id="pattern-description" class="help-text"></p>
+    </div>
+  </div>
+
+  <!-- Step 3: Select Target Service -->
+  <div class="form-section">
+    <h3>3. Select Target Service</h3>
+    <div class="form-group">
+      <label for="service">
+        Target Service <span class="required">*</span>
+      </label>
+      <select id="service" name="service" required>
+        <option value="">-- Select target service --</option>
+        <% @services.each do |service_key, service_config| %>
+          <option value="<%= service_key %>">
+            <%= service_config['name'] %> (<%= service_config['id'] %>)
+          </option>
+        <% end %>
+      </select>
+      <p class="help-text">The external service that will receive this notification</p>
+    </div>
+  </div>
+
+  <!-- Step 4: Pattern-Specific Fields (dynamically populated) -->
+  <div id="pattern-specific-fields"></div>
+
+  <!-- UndoOffer specific fields (shown only for UndoOffer) -->
+  <div id="undo-offer-fields" style="display: none;">
+    <div class="form-section">
+      <h3>4. UndoOffer Details</h3>
+
+      <div class="form-group">
+        <label for="original_notification_id">
+          Original Notification ID <span class="required">*</span>
+        </label>
+        <select id="original_notification_id" name="original_notification_id">
+          <option value="">-- Select the notification to withdraw --</option>
+        </select>
+        <p class="help-text">Select the notification you want to withdraw</p>
+      </div>
+
+      <div class="form-group">
+        <label for="withdrawal_reason">
+          Reason for Withdrawal (optional)
+        </label>
+        <textarea id="withdrawal_reason" name="withdrawal_reason" rows="3" placeholder="Brief explanation of why you're withdrawing this request..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Submit -->
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">
+      📤 Send Notification
+    </button>
+    <a href="/coar/dashboard" class="btn btn-secondary">
+      Cancel
+    </a>
+  </div>
+</form>
+
+<script>
+// Show pattern description when selected
+document.getElementById('pattern').addEventListener('change', function() {
+  const selectedOption = this.options[this.selectedIndex];
+  const description = selectedOption.getAttribute('data-description') || '';
+  document.getElementById('pattern-description').textContent = description;
+
+  // Show/hide UndoOffer specific fields
+  const undoOfferFields = document.getElementById('undo-offer-fields');
+  if (this.value === 'UndoOffer') {
+    undoOfferFields.style.display = 'block';
+    loadSentNotifications();
+  } else {
+    undoOfferFields.style.display = 'none';
+  }
+});
+
+// Load sent notifications for UndoOffer
+function loadSentNotifications() {
+  const issueId = document.getElementById('issue_id').value;
+  if (!issueId) {
+    alert('Please select a preprint first');
+    document.getElementById('pattern').value = '';
+    return;
+  }
+
+  fetch(`/coar/dashboard/api/papers/${issueId}/sent_notifications`)
+    .then(response => response.json())
+    .then(notifications => {
+      const select = document.getElementById('original_notification_id');
+      select.innerHTML = '<option value="">-- Select the notification to withdraw --</option>';
+
+      if (notifications.length === 0) {
+        select.innerHTML += '<option value="" disabled>No sent notifications found for this paper</option>';
+      } else {
+        notifications.forEach(notif => {
+          const date = new Date(notif.created_at).toLocaleString();
+          select.innerHTML += `<option value="${notif.id}">${notif.type} - ${date}</option>`;
+        });
+      }
+    })
+    .catch(error => {
+      console.error('Error loading sent notifications:', error);
+      alert('Failed to load sent notifications');
+    });
+}
+
+// Reload sent notifications when issue changes (if UndoOffer is selected)
+document.getElementById('issue_id').addEventListener('change', function() {
+  if (document.getElementById('pattern').value === 'UndoOffer') {
+    loadSentNotifications();
+  }
+});
+</script>

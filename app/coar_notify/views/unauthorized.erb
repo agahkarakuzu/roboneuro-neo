@@ -1,0 +1,11 @@
+<div class="error-page">
+  <h1>🔒 Unauthorized</h1>
+  <p>You need to provide valid authentication to access the COAR Notify Dashboard.</p>
+  <p class="help-text">
+    Set the <code>COAR_DASHBOARD_TOKEN</code> environment variable and include it as a Bearer token in the Authorization header.
+  </p>
+  <pre class="code-example">Authorization: Bearer your-token-here</pre>
+  <p class="help-text">
+    In development mode (<code>RACK_ENV=development</code>), authentication is bypassed.
+  </p>
+</div>
