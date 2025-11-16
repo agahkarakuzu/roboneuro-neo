@@ -11,8 +11,9 @@ Sequel.migration do
       primary_key :id
 
       # ===== CORE W3C LDN PROPERTIES =====
-      String :notification_id, null: false, unique: true
+      String :notification_id, null: false
       # The notification.id (e.g., "https://robo.neurolibre.org/coar/inbox/notifications/abc123")
+      # Unique per direction (allows same notification to be both sent and received)
 
       String :direction, null: false
       # 'sent' (outbox) or 'received' (inbox)
@@ -90,7 +91,8 @@ Sequel.migration do
       DateTime :updated_at, null: false
 
       # ===== INDEXES =====
-      index :notification_id, unique: true
+      index [:notification_id, :direction], unique: true  # Composite unique constraint
+      index :notification_id  # Non-unique index for queries
       index :direction
       index :origin_id
       index :target_id
