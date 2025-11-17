@@ -14,21 +14,26 @@ module CoarNotify
       # Main dashboard view
       get '/coar_notify/dashboard' do
         # Get filter parameters
-        status_filter = params[:status]
-        service_filter = params[:service]
-        direction_filter = params[:direction] || 'received'
+        @status = params[:status] || ''
+        @service = params[:service] || ''
+        @direction = params[:direction] || 'received'
+        @offset = (params[:offset] || 0).to_i
+        @limit = (params[:limit] || 50).to_i
 
         # Build query
-        query = CoarNotify::Models::Notification.where(direction: direction_filter)
-        query = query.where(status: status_filter) if status_filter && !status_filter.empty?
-        query = query.where(service_name: service_filter) if service_filter && !service_filter.empty?
+        query = CoarNotify::Models::Notification.where(direction: @direction)
+        query = query.where(status: @status) if @status && !@status.empty?
+        query = query.where(service_name: @service) if @service && !@service.empty?
+
+        # Get total count for pagination
+        @total_count = query.count
 
         # Get notifications ordered by most recent first
-        @notifications = query.order(Sequel.desc(:created_at)).limit(100).all
+        @notifications = query.order(Sequel.desc(:created_at)).limit(@limit).offset(@offset).all
 
         # Get unique services for filter dropdown
         @services = CoarNotify::Models::Notification
-          .where(direction: direction_filter)
+          .where(direction: @direction)
           .select(:service_name)
           .distinct
           .map(:service_name)
@@ -37,16 +42,17 @@ module CoarNotify
 
         # Get stats
         @stats = {
-          total: CoarNotify::Models::Notification.where(direction: direction_filter).count,
-          pending: CoarNotify::Models::Notification.where(direction: direction_filter, status: 'pending').count,
-          processing: CoarNotify::Models::Notification.where(direction: direction_filter, status: 'processing').count,
-          processed: CoarNotify::Models::Notification.where(direction: direction_filter, status: 'processed').count,
-          failed: CoarNotify::Models::Notification.where(direction: direction_filter, status: 'failed').count
+          total: CoarNotify::Models::Notification.where(direction: @direction).count,
+          pending: CoarNotify::Models::Notification.where(direction: @direction, status: 'pending').count,
+          processing: CoarNotify::Models::Notification.where(direction: @direction, status: 'processing').count,
+          processed: CoarNotify::Models::Notification.where(direction: @direction, status: 'processed').count,
+          failed: CoarNotify::Models::Notification.where(direction: @direction, status: 'failed').count
         }
 
-        @current_status = status_filter
-        @current_service = service_filter
-        @current_direction = direction_filter
+        # Set legacy variable names for backwards compatibility
+        @current_status = @status
+        @current_service = @service
+        @current_direction = @direction
 
         erb :dashboard
       end
