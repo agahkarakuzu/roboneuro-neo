@@ -408,10 +408,12 @@ module CoarNotify
         notification.object.cite_as = "https://doi.org/#{paper_data[:doi]}"
         notification.object.type = ["Page"]
 
-        notification.object.item = Coarnotify::Patterns::RequestReviewItem.new
-        notification.object.item.id = "https://preprint.neurolibre.org/#{paper_data[:doi]}.pdf"
-        notification.object.item.media_type = "application/pdf"
-        notification.object.item.type = "sorg:AboutPage"
+        # Set item as hash since RequestReviewItem serialization shows "#"
+        notification.object.item = {
+          "id" => "https://preprint.neurolibre.org/#{paper_data[:doi]}.pdf",
+          "type" => "sorg:AboutPage",
+          "mediaType" => "application/pdf"
+        }
 
         notification.actor = Coarnotify::Core::Notify::NotifyActor.new
         notification.actor.id = "https://orcid.org/0000-0001-7283-271X"
