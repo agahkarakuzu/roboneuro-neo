@@ -77,13 +77,21 @@ module CoarNotify
           halt 400, "Service is required" unless service_name
 
           # Validate pattern
-          unless ['RequestReview', 'RequestEndorsement'].include?(pattern)
+          unless ['RequestReview', 'RequestEndorsement', 'UndoOffer'].include?(pattern)
             halt 400, "Invalid notification type: #{pattern}"
           end
 
-          # Fetch paper data from NeuroLibre API
-          paper_data = CoarNotify::Services::GitHubNotifier.get_paper_by_issue(issue_id)
-          halt 404, "Paper not found for issue ##{issue_id}" unless paper_data
+          # Compute DOI and URL from issue_id
+          # Issue 27 -> DOI: 10.55458/neurolibre.00027
+          doi = "10.55458/neurolibre.#{issue_id.to_s.rjust(5, '0')}"
+          url = "https://neurolibre.org/papers/#{doi}"
+
+          # Build paper_data hash with computed values
+          paper_data = {
+            issue_id: issue_id,
+            doi: doi,
+            url: url
+          }
 
           # Add notes if provided
           paper_data[:notes] = notes if notes && !notes.empty?
@@ -96,6 +104,10 @@ module CoarNotify
             sender.send_request_review(paper_data, service_name)
           when 'RequestEndorsement'
             sender.send_request_endorsement(paper_data, service_name)
+          when 'UndoOffer'
+            # For UndoOffer, we need the original notification ID
+            # For now, show error - this needs special handling
+            halt 400, "UndoOffer requires selecting the original notification to withdraw"
           end
 
           # Check if send was successful
