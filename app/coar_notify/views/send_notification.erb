@@ -1,153 +1,158 @@
-<h2>Send COAR Notification</h2>
-
-<form id="send-notification-form" method="POST" action="/coar/dashboard/send" class="send-form">
-
-  <!-- Step 1: Select Preprint -->
-  <div class="form-section">
-    <h3>1. Select Preprint</h3>
-    <div class="form-group">
-      <label for="issue_id">
-        GitHub Issue ID <span class="required">*</span>
-      </label>
-      <select id="issue_id" name="issue_id" required>
-        <option value="">-- Select a preprint --</option>
-        <% @papers.each do |paper| %>
-          <option value="<%= paper[:issue_id] %>" data-doi="<%= paper[:doi] %>" data-title="<%= paper[:title] %>">
-            #<%= paper[:issue_id] %> - <%= paper[:title] %> (<%= paper[:doi] %>)
-          </option>
-        <% end %>
-      </select>
-      <p class="help-text">Select the preprint you want to send a notification about</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Send Notification - COAR Notify</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Back Button -->
+    <div class="mb-6">
+      <a href="/coar_notify/dashboard" class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900">
+        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Back to Dashboard
+      </a>
     </div>
-  </div>
 
-  <!-- Step 2: Select Notification Type -->
-  <div class="form-section">
-    <h3>2. Select Notification Type</h3>
-    <div class="form-group">
-      <label for="pattern">
-        Notification Pattern <span class="required">*</span>
-      </label>
-      <select id="pattern" name="pattern" required>
-        <option value="">-- Select notification type --</option>
-        <% @send_patterns.each do |pattern_name, pattern_class| %>
-          <option value="<%= pattern_name %>" data-description="<%= pattern_class.description %>">
-            <%= pattern_name %>
-          </option>
-        <% end %>
-      </select>
-      <p id="pattern-description" class="help-text"></p>
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Send Notification</h1>
+      <p class="mt-2 text-gray-600">Send a COAR Notify notification to a service</p>
     </div>
-  </div>
 
-  <!-- Step 3: Select Target Service -->
-  <div class="form-section">
-    <h3>3. Select Target Service</h3>
-    <div class="form-group">
-      <label for="service">
-        Target Service <span class="required">*</span>
-      </label>
-      <select id="service" name="service" required>
-        <option value="">-- Select target service --</option>
-        <% @services.each do |service_key, service_config| %>
-          <option value="<%= service_key %>">
-            <%= service_config['name'] %> (<%= service_config['id'] %>)
-          </option>
-        <% end %>
-      </select>
-      <p class="help-text">The external service that will receive this notification</p>
+    <!-- Form -->
+    <div class="bg-white rounded-lg shadow-lg">
+      <form method="POST" action="/coar_notify/dashboard/send" class="p-6 space-y-6">
+
+        <!-- Step 1: Select Pattern -->
+        <div class="border-b border-gray-200 pb-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">1. Select Notification Type</h2>
+          <div class="space-y-3">
+            <label class="flex items-start p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all">
+              <input type="radio" name="pattern" value="RequestReview" class="mt-1 mr-3" required>
+              <div>
+                <div class="font-medium text-gray-900">Request Review</div>
+                <div class="text-sm text-gray-600">Request a peer review for a preprint</div>
+              </div>
+            </label>
+
+            <label class="flex items-start p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all">
+              <input type="radio" name="pattern" value="RequestEndorsement" class="mt-1 mr-3">
+              <div>
+                <div class="font-medium text-gray-900">Request Endorsement</div>
+                <div class="text-sm text-gray-600">Request an endorsement for a preprint</div>
+              </div>
+            </label>
+
+            <label class="flex items-start p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all">
+              <input type="radio" name="pattern" value="UndoOffer" class="mt-1 mr-3">
+              <div>
+                <div class="font-medium text-gray-900">Undo Offer</div>
+                <div class="text-sm text-gray-600">Withdraw a previous request</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Step 2: Select Service -->
+        <div class="border-b border-gray-200 pb-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">2. Select Target Service</h2>
+          <select name="service" required
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <option value="">-- Select a service --</option>
+            <option value="elife">eLife</option>
+            <option value="review_commons">Review Commons</option>
+            <option value="pci">PCI (Peer Community In)</option>
+            <option value="prereview">PREreview</option>
+          </select>
+        </div>
+
+        <!-- Step 3: Paper Details -->
+        <div class="border-b border-gray-200 pb-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">3. Paper Information</h2>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Issue ID <span class="text-red-600">*</span>
+              </label>
+              <input type="number" name="issue_id" required
+                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                     placeholder="e.g., 123">
+              <p class="mt-1 text-sm text-gray-500">The GitHub issue ID for this preprint</p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Paper DOI
+              </label>
+              <input type="text" name="paper_doi"
+                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                     placeholder="e.g., 10.55458/neurolibre.00001">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Paper URL
+              </label>
+              <input type="url" name="paper_url"
+                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                     placeholder="e.g., https://neurolibre.org/papers/10.55458/neurolibre.00001">
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Additional Information -->
+        <div class="pb-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">4. Additional Information (Optional)</h2>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Message / Notes
+              </label>
+              <textarea name="message" rows="4"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Any additional message or notes for the service..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="flex items-center justify-end gap-4 pt-4">
+          <a href="/coar_notify/dashboard"
+             class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+            Cancel
+          </a>
+          <button type="submit"
+                  class="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+            📤 Send Notification
+          </button>
+        </div>
+      </form>
     </div>
-  </div>
 
-  <!-- Step 4: Pattern-Specific Fields (dynamically populated) -->
-  <div id="pattern-specific-fields"></div>
-
-  <!-- UndoOffer specific fields (shown only for UndoOffer) -->
-  <div id="undo-offer-fields" style="display: none;">
-    <div class="form-section">
-      <h3>4. UndoOffer Details</h3>
-
-      <div class="form-group">
-        <label for="original_notification_id">
-          Original Notification ID <span class="required">*</span>
-        </label>
-        <select id="original_notification_id" name="original_notification_id">
-          <option value="">-- Select the notification to withdraw --</option>
-        </select>
-        <p class="help-text">Select the notification you want to withdraw</p>
+    <!-- Info Box -->
+    <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-blue-800">About COAR Notify Patterns</h3>
+          <div class="mt-2 text-sm text-blue-700">
+            <p>These notification types follow the COAR Notify specification v1.0.1 for scholarly communication between repositories and services.</p>
+            <a href="https://coar-notify.net/specification/1.0.1/" target="_blank" class="underline mt-1 inline-block">
+              Learn more about COAR Notify →
+            </a>
+          </div>
+        </div>
       </div>
-
-      <div class="form-group">
-        <label for="withdrawal_reason">
-          Reason for Withdrawal (optional)
-        </label>
-        <textarea id="withdrawal_reason" name="withdrawal_reason" rows="3" placeholder="Brief explanation of why you're withdrawing this request..."></textarea>
-      </div>
     </div>
   </div>
-
-  <!-- Submit -->
-  <div class="form-actions">
-    <button type="submit" class="btn btn-primary">
-      📤 Send Notification
-    </button>
-    <a href="/coar/dashboard" class="btn btn-secondary">
-      Cancel
-    </a>
-  </div>
-</form>
-
-<script>
-// Show pattern description when selected
-document.getElementById('pattern').addEventListener('change', function() {
-  const selectedOption = this.options[this.selectedIndex];
-  const description = selectedOption.getAttribute('data-description') || '';
-  document.getElementById('pattern-description').textContent = description;
-
-  // Show/hide UndoOffer specific fields
-  const undoOfferFields = document.getElementById('undo-offer-fields');
-  if (this.value === 'UndoOffer') {
-    undoOfferFields.style.display = 'block';
-    loadSentNotifications();
-  } else {
-    undoOfferFields.style.display = 'none';
-  }
-});
-
-// Load sent notifications for UndoOffer
-function loadSentNotifications() {
-  const issueId = document.getElementById('issue_id').value;
-  if (!issueId) {
-    alert('Please select a preprint first');
-    document.getElementById('pattern').value = '';
-    return;
-  }
-
-  fetch(`/coar/dashboard/api/papers/${issueId}/sent_notifications`)
-    .then(response => response.json())
-    .then(notifications => {
-      const select = document.getElementById('original_notification_id');
-      select.innerHTML = '<option value="">-- Select the notification to withdraw --</option>';
-
-      if (notifications.length === 0) {
-        select.innerHTML += '<option value="" disabled>No sent notifications found for this paper</option>';
-      } else {
-        notifications.forEach(notif => {
-          const date = new Date(notif.created_at).toLocaleString();
-          select.innerHTML += `<option value="${notif.id}">${notif.type} - ${date}</option>`;
-        });
-      }
-    })
-    .catch(error => {
-      console.error('Error loading sent notifications:', error);
-      alert('Failed to load sent notifications');
-    });
-}
-
-// Reload sent notifications when issue changes (if UndoOffer is selected)
-document.getElementById('issue_id').addEventListener('change', function() {
-  if (document.getElementById('pattern').value === 'UndoOffer') {
-    loadSentNotifications();
-  }
-});
-</script>
+</body>
+</html>

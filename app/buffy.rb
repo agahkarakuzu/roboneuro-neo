@@ -4,8 +4,7 @@ require_relative 'sinatra_ext/github_webhook_filter'
 require_relative 'lib/responders_loader'
 require_relative 'coar_notify/coar_notify'
 require_relative 'coar_notify/routes/inbox'
-require_relative 'coar_notify/routes/inbox_ui'  # Old simple dashboard (view only)
-require_relative 'coar_notify/routes/dashboard'  # New comprehensive dashboard (view + send)
+require_relative 'coar_notify/routes/inbox_ui'
 require_relative 'coar_notify/routes/outbox'
 
 class Buffy < Sinatra::Base

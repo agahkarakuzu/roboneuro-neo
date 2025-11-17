@@ -57,6 +57,18 @@ module CoarNotify
         erb :dashboard
       end
 
+      # Send notification form
+      get '/coar_notify/dashboard/send' do
+        erb :send_notification
+      end
+
+      # Handle send notification form submission
+      post '/coar_notify/dashboard/send' do
+        # TODO: Implement send logic here
+        # For now, just show a placeholder
+        halt 501, "Send functionality coming soon"
+      end
+
       # View individual notification details
       get '/coar_notify/dashboard/:id' do
         @notification = CoarNotify::Models::Notification.where(id: params[:id]).first
