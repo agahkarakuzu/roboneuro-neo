@@ -20,15 +20,6 @@ module CoarNotify
   # Add app directory to load path for autoloading
   $LOAD_PATH.unshift(File.expand_path('../..', __dir__)) unless $LOAD_PATH.include?(File.expand_path('../..', __dir__))
 
-  # Autoload registry (pattern definitions)
-  module Registry
-    autoload :PatternRegistry, File.expand_path('registry/pattern_registry', __dir__)
-
-    # Pattern classes are auto-discovered by PatternRegistry
-    module Patterns
-    end
-  end
-
   # Autoload handlers (received notification processors)
   module Handlers
     autoload :HandlerRegistry, File.expand_path('handlers/handler_registry', __dir__)

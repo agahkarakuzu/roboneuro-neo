@@ -10,6 +10,21 @@
 #   - supported_patterns: List of COAR Notify patterns this service supports
 
 services:
+  local_test:
+    name: "Local Test"
+    id: "https://neurolibre.org"
+    inbox_url: "http://localhost:3000/coar_notify/inbox"
+    supported_patterns:
+      - RequestReview
+      - RequestEndorsement
+      - UndoOffer
+      - Accept
+      - Reject
+      - TentativeAccept
+      - TentativeReject
+      - AnnounceReview
+      - AnnounceEndorsement
+
   prereview:
     name: "PREreview"
     id: "https://prereview.org"
@@ -24,8 +39,20 @@ services:
       - UndoOffer
       - Unprocessable
 
+  elife:
+    name: "eLife"
+    id: "https://elifesciences.org"
+    inbox_url: "https://elifesciences.org/coar-notify/inbox"
+    supported_patterns:
+      - RequestReview
+      - AnnounceReview
+      - Accept
+      - Reject
+      - TentativeAccept
+      - TentativeReject
+
   pci:
-    name: "PCI Express"
+    name: "PCI (Peer Community In)"
     id: "https://pci.express"
     inbox_url: "https://pci.express/inbox"
     supported_patterns:
@@ -37,6 +64,16 @@ services:
       - TentativeReject
       - UndoOffer
       - Unprocessable
+
+  review_commons:
+    name: "Review Commons"
+    id: "https://www.reviewcommons.org"
+    inbox_url: "https://www.reviewcommons.org/coar-notify/inbox"
+    supported_patterns:
+      - RequestReview
+      - AnnounceReview
+      - Accept
+      - Reject
 
   sciety:
     name: "Sciety"

@@ -64,9 +64,57 @@ module CoarNotify
 
       # Handle send notification form submission
       post '/coar_notify/dashboard/send' do
-        # TODO: Implement send logic here
-        # For now, just show a placeholder
-        halt 501, "Send functionality coming soon"
+        begin
+          # Get form parameters
+          issue_id = params[:issue_id]&.to_i
+          pattern = params[:pattern]
+          service_name = params[:service]
+          notes = params[:notes]
+
+          # Validate required parameters
+          halt 400, "Issue ID is required" unless issue_id && issue_id > 0
+          halt 400, "Notification type is required" unless pattern
+          halt 400, "Service is required" unless service_name
+
+          # Validate pattern
+          unless ['RequestReview', 'RequestEndorsement'].include?(pattern)
+            halt 400, "Invalid notification type: #{pattern}"
+          end
+
+          # Fetch paper data from NeuroLibre API
+          paper_data = CoarNotify::Services::GitHubNotifier.get_paper_by_issue(issue_id)
+          halt 404, "Paper not found for issue ##{issue_id}" unless paper_data
+
+          # Add notes if provided
+          paper_data[:notes] = notes if notes && !notes.empty?
+
+          # Send notification using existing Sender service
+          sender = CoarNotify::Services::Sender.new
+
+          result = case pattern
+          when 'RequestReview'
+            sender.send_request_review(paper_data, service_name)
+          when 'RequestEndorsement'
+            sender.send_request_endorsement(paper_data, service_name)
+          end
+
+          # Check if send was successful
+          if result[:success]
+            # Redirect to dashboard with success message
+            redirect "/coar_notify/dashboard?status=processed&direction=sent"
+          else
+            halt 500, "Failed to send notification: #{result[:error]}"
+          end
+
+        rescue ArgumentError => e
+          # Service not found or validation error
+          halt 400, "Error: #{e.message}"
+        rescue => e
+          # Unexpected error
+          warn "Error sending notification: #{e.class} - #{e.message}"
+          warn e.backtrace.join("\n")
+          halt 500, "Unexpected error: #{e.message}"
+        end
       end
 
       # View individual notification details
