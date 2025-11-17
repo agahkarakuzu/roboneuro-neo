@@ -406,22 +406,22 @@ module CoarNotify
         notification.object = Coarnotify::Patterns::RequestReviewObject.new
         notification.object.id = "https://doi.org/#{paper_data[:doi]}"
         notification.object.cite_as = "https://doi.org/#{paper_data[:doi]}"
-        notification.object.type = ["ScholarlyArticle"]
+        notification.object.type = ["Article"]
 
-        # Add item (repository or preprint URL)
+        
         item = Coarnotify::Patterns::RequestReviewItem.new
-        item.id = paper_data[:repository_url] || paper_data[:url] || notification.object.id
-        item.media_type = "text/html"
-        item.type = "WebPage"
+        item.id = "https://preprint.neurolibre.org/#{paper_data[:doi]}.pdf"
+        item.media_type = "application/pdf"
+        item.type = "sorg:ScholarlyArticle"
         notification.object.item = item
 
-        # Set actor (editor, if available)
-        if paper_data[:editor_orcid] || paper_data[:editor_name]
-          notification.actor = Coarnotify::Core::Notify::NotifyActor.new
-          notification.actor.id = "https://orcid.org/#{paper_data[:editor_orcid]}" if paper_data[:editor_orcid]
-          notification.actor.name = paper_data[:editor_name] if paper_data[:editor_name]
-          notification.actor.type = "Person"
-        end
+        # # Set actor (editor, if available)
+        # if paper_data[:editor_orcid] || paper_data[:editor_name]
+        #   notification.actor = Coarnotify::Core::Notify::NotifyActor.new
+        #   notification.actor.id = "https://orcid.org/#{paper_data[:editor_orcid]}" if paper_data[:editor_orcid]
+        #   notification.actor.name = paper_data[:editor_name] if paper_data[:editor_name]
+        #   notification.actor.type = "Person"
+        # end
 
         notification
       end
