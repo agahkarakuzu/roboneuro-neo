@@ -406,14 +406,17 @@ module CoarNotify
         notification.object = Coarnotify::Patterns::RequestReviewObject.new
         notification.object.id = "https://doi.org/#{paper_data[:doi]}"
         notification.object.cite_as = "https://doi.org/#{paper_data[:doi]}"
-        notification.object.type = ["Article"]
+        notification.object.type = ["Page"]
 
-        
-        item = Coarnotify::Patterns::RequestReviewItem.new
-        item.id = "https://preprint.neurolibre.org/#{paper_data[:doi]}.pdf"
-        item.media_type = "application/pdf"
-        item.type = "sorg:ScholarlyArticle"
-        notification.object.item = item
+        notification.object.item = Coarnotify::Patterns::RequestReviewItem.new
+        notification.object.item.id = "https://preprint.neurolibre.org/#{paper_data[:doi]}.pdf"
+        notification.object.item.media_type = "application/pdf"
+        notification.object.item.type = "sorg:AboutPage"
+
+        notification.actor = Coarnotify::Core::Notify::NotifyActor.new
+        notification.actor.id = "https://orcid.org/0000-0001-7283-271X"
+        notification.actor.name = "Theo Karakuzu"
+        notification.actor.type = "Person"
 
         # # Set actor (editor, if available)
         # if paper_data[:editor_orcid] || paper_data[:editor_name]
