@@ -60,87 +60,26 @@ This module implements **Option 2** from the COAR Notify architecture specificat
 
 ---
 
-## Installation
+## DEV installation
 
-### 1. Dependencies
+* Docker compose 
 
-The module requires:
-- PostgreSQL (for notification storage)
-- Redis (for Sidekiq job queue - already present in roboneuro)
-- `coarnotify` gem (COAR Notify protocol implementation - **via git submodule**)
-- `sequel` gem (database ORM)
-
-Dependencies are already added to `Gemfile_custom`:
-
-```ruby
-gem 'coarnotify', path: 'coarnotifyrb'  # Local submodule (not published to RubyGems)
-gem 'sequel', '~> 5.0'
-gem 'pg', '~> 1.5'
+```
+cd compose
+docker compose up -d
 ```
 
-Initialize submodules and install gems:
+# Export DB and migrate
 
-```bash
-# Initialize git submodules (coarnotifyrb)
-git submodule update --init --recursive
-
-# Install gems
-bundle install
 ```
-
-**Note**: The `coarnotify` gem is not published to RubyGems, so it's included as a git submodule at `coarnotifyrb/` and referenced locally in the Gemfile.
-
-### 2. Database Setup
-
-#### Local Development
-
-```bash
-# Create database
-createdb roboneuro_development
-
-# Set DATABASE_URL
-export DATABASE_URL="postgres://localhost/roboneuro_development"
-
-# Run migrations
+export DATABASE_URL="postgres://roboneuro:roboneuro@localhost:5433/roboneuro_development"
 sequel -m db/migrations $DATABASE_URL
 ```
 
-#### Heroku Production
+# Run via heroku 
 
-```bash
-# Add PostgreSQL add-on (if not already present)
-heroku addons:create heroku-postgresql:mini --app roboneuro-production
-
-# Run migrations
-heroku run sequel -m db/migrations \$DATABASE_URL --app roboneuro-production
 ```
-
-### 3. Environment Variables
-
-Required environment variables:
-
-```bash
-# Enable COAR Notify
-COAR_NOTIFY_ENABLED=true
-
-# Inbox URL (where external services send notifications)
-COAR_INBOX_URL=https://robo.neurolibre.org/coar/inbox
-
-# Service ID (NeuroLibre identifier)
-COAR_SERVICE_ID=https://neurolibre.org
-
-# Database connection
-DATABASE_URL=postgres://user:pass@host:5432/dbname
-
-# Security: IP whitelist (optional but recommended)
-COAR_IP_WHITELIST_ENABLED=true
-COAR_ALLOWED_IPS=54.xxx.xxx.xxx,52.xxx.xxx.xxx
-
-# Existing roboneuro variables (already set)
-BUFFY_GH_ACCESS_TOKEN=ghp_xxxxx
-ROBONEURO_SECRET=xxxxx
-REVIEWS_REPOSITORY=neurolibre/neurolibre-reviews
-NEUROLIBRE_API_URL=https://neurolibre.org/papers
+heroku local
 ```
 
 ---
