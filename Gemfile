@@ -24,6 +24,7 @@ group :test do
   gem 'rack-test'
   gem 'rspec'
   gem 'webmock'
+  gem 'sqlite3'   # COAR Notify's in-memory database in the test settings
 end
 
 eval_gemfile './Gemfile_custom'
